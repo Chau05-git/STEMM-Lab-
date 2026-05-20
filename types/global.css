@@ -1,0 +1,4 @@
+/* Global CSS reset for web target */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
