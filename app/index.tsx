@@ -1,11 +1,49 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-export default function Index() {
+import { ThemedText } from '@/components/ThemedText';
+import { BorderRadius, Colors, Spacing } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
+import { useSettings } from '@/context/SettingsContext';
+import { useTeam } from '@/context/TeamContext';
+
+/**
+ * Splash + router gate.
+ *   not signed in        → /login
+ *   signed in, no team   → /register
+ *   signed in, has team  → /(tabs)
+ */
+export default function SplashScreen() {
+    const router = useRouter();
+    const { resolvedTheme } = useSettings();
+    const { user, isLoading: authLoading } = useAuth();
+    const { team, isLoading: teamLoading } = useTeam();
+    const colors = Colors[resolvedTheme];
+
+    useEffect(() => {
+        if (authLoading || teamLoading) return;
+
+        const timer = setTimeout(() => {
+            if (!user) router.replace('/login');
+            else if (!team) router.replace('/register');
+            else router.replace('/(tabs)');
+        }, 700);
+
+        return () => clearTimeout(timer);
+    }, [authLoading, teamLoading, user, team, router]);
+
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>STEMM Lab</Text>
-            <Text style={styles.sub}>Real-World STEMM Games</Text>
-            <Text style={styles.note}>Phase 1 complete — project foundation ready.</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <View style={[styles.logoBadge, { backgroundColor: colors.primary }]}>
+                <Ionicons name="flask" size={52} color={colors.onPrimary} />
+            </View>
+            <ThemedText variant="displayMedium" style={styles.title}>STEMM Lab</ThemedText>
+            <ThemedText variant="bodyLarge" color="textSecondary" style={styles.subtitle}>
+                Real-World STEMM Games
+            </ThemedText>
+            <ActivityIndicator size="large" color={colors.primary} style={styles.spinner} />
         </View>
     );
 }
@@ -13,29 +51,25 @@ export default function Index() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0F172A',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 24,
+        padding: Spacing.xl,
+    },
+    logoBadge: {
+        width: 104,
+        height: 104,
+        borderRadius: BorderRadius.xxl,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: Spacing.xl,
     },
     title: {
-        fontSize: 36,
-        fontWeight: '800',
-        color: '#F8FAFF',
-        marginBottom: 8,
-        letterSpacing: -0.5,
+        marginBottom: Spacing.xs,
     },
-    sub: {
-        fontSize: 16,
-        color: '#94A3B8',
-        marginBottom: 32,
+    subtitle: {
+        marginBottom: Spacing.xxxl,
     },
-    note: {
-        fontSize: 13,
-        color: '#4F46E5',
-        backgroundColor: '#1E1B4B',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
+    spinner: {
+        marginTop: Spacing.lg,
     },
 });
