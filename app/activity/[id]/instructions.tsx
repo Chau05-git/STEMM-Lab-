@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from '@/components/ui/Button';
 import { getActivityById } from '@/constants/activities';
+import { activityHeaderOptions } from '@/constants/screenOptions';
 import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
 import { useSettings } from '@/context/SettingsContext';
 
@@ -22,11 +24,8 @@ export default function InstructionsScreen() {
 
     return (
         <>
-            <Stack.Screen options={{ headerShown: true, title: 'Instructions', headerStyle: { backgroundColor: colors.background }, headerShadowVisible: false, headerTintColor: colors.text, headerTitleStyle: { fontWeight: '700' } }} />
-            <ScrollView
-                style={{ backgroundColor: colors.background }}
-                contentContainerStyle={styles.content}
-            >
+            <Stack.Screen options={activityHeaderOptions(colors, 'Instructions')} />
+            <Screen scroll>
                 <ThemedText variant="headlineSmall" style={styles.title}>{activity.name}</ThemedText>
 
                 {activity.hasTimer ? (
@@ -62,13 +61,12 @@ export default function InstructionsScreen() {
                     onPress={() => router.push(`/activity/${activity.id}/record`)}
                     style={styles.cta}
                 />
-            </ScrollView>
+            </Screen>
         </>
     );
 }
 
 const styles = StyleSheet.create({
-    content: { padding: Spacing.lg, paddingBottom: Spacing.xxxxl },
     title: { marginBottom: Spacing.lg },
     timerBanner: {
         flexDirection: 'row',

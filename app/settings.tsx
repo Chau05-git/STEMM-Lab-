@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
 
+import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
 import type { ColorScheme } from '@/constants/types';
@@ -20,10 +21,7 @@ export default function SettingsScreen() {
     const colors = Colors[resolvedTheme];
 
     return (
-        <ScrollView
-            style={{ backgroundColor: colors.background }}
-            contentContainerStyle={styles.content}
-        >
+        <Screen scroll>
             {/* Appearance */}
             <ThemedText variant="labelMedium" color="textTertiary" style={styles.groupLabel}>
                 APPEARANCE
@@ -104,7 +102,7 @@ export default function SettingsScreen() {
             <ThemedText variant="caption" color="textTertiary" style={styles.version}>
                 STEMM Lab v1.0.0
             </ThemedText>
-        </ScrollView>
+        </Screen>
     );
 }
 
@@ -139,7 +137,6 @@ function ToggleRow({
 }
 
 const styles = StyleSheet.create({
-    content: { padding: Spacing.lg, paddingBottom: Spacing.xxxxl },
     groupLabel: { marginTop: Spacing.lg, marginBottom: Spacing.sm, marginLeft: Spacing.xs, letterSpacing: 1 },
     card: { borderRadius: BorderRadius.lg, padding: Spacing.md },
     themeHint: { marginBottom: Spacing.sm },

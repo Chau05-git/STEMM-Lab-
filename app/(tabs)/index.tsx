@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ActivityGridCard } from '@/components/ActivityGridCard';
+import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { ENGINEERING_ACTIVITIES, HEALTH_ACTIVITIES } from '@/constants/activities';
 import { Colors, Spacing } from '@/constants/theme';
@@ -20,11 +21,7 @@ export default function HomeScreen() {
         activityProgress[id]?.status ?? 'not_started';
 
     return (
-        <ScrollView
-            style={{ backgroundColor: colors.background }}
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}
-        >
+        <Screen scroll>
             {/* Greeting */}
             <ThemedText variant="bodyMedium" color="textSecondary">
                 Welcome back,
@@ -47,7 +44,7 @@ export default function HomeScreen() {
                 statusOf={statusOf}
                 onPress={(id) => router.push(`/activity/${id}`)}
             />
-        </ScrollView>
+        </Screen>
     );
 }
 
@@ -97,10 +94,6 @@ function Section({
 }
 
 const styles = StyleSheet.create({
-    content: {
-        padding: Spacing.lg,
-        paddingBottom: Spacing.xxxxl,
-    },
     teamName: { marginBottom: Spacing.xl },
     section: { marginBottom: Spacing.xl },
     sectionHeader: {

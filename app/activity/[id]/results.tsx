@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { getActivityById } from '@/constants/activities';
+import { activityHeaderOptions } from '@/constants/screenOptions';
 import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
 import { useSettings } from '@/context/SettingsContext';
 
@@ -26,11 +28,8 @@ export default function ResultsScreen() {
 
     return (
         <>
-            <Stack.Screen options={{ headerShown: true, title: 'Results', headerStyle: { backgroundColor: colors.background }, headerShadowVisible: false, headerTintColor: colors.text, headerTitleStyle: { fontWeight: '700' } }} />
-            <ScrollView
-                style={{ backgroundColor: colors.background }}
-                contentContainerStyle={styles.content}
-            >
+            <Stack.Screen options={activityHeaderOptions(colors, 'Results')} />
+            <Screen scroll>
                 {/* Formulas (shown by student level — full list for now) */}
                 {activity.formulas.length > 0 ? (
                     <>
@@ -87,13 +86,12 @@ export default function ResultsScreen() {
                     onPress={() => router.dismissAll()}
                     style={styles.cta}
                 />
-            </ScrollView>
+            </Screen>
         </>
     );
 }
 
 const styles = StyleSheet.create({
-    content: { padding: Spacing.lg, paddingBottom: Spacing.xxxxl },
     sectionTitle: { marginTop: Spacing.lg, marginBottom: Spacing.md },
     formulaCard: {
         padding: Spacing.md,

@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
+import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from '@/components/ui/Button';
 import { ACTIVITIES } from '@/constants/activities';
@@ -38,10 +39,7 @@ export default function ProfileScreen() {
     };
 
     return (
-        <ScrollView
-            style={{ backgroundColor: colors.background }}
-            contentContainerStyle={styles.content}
-        >
+        <Screen scroll>
             {/* Team header card */}
             <View style={[styles.headerCard, { backgroundColor: colors.primary }]}>
                 <View style={[styles.avatar, { backgroundColor: colors.onPrimary + '22' }]}>
@@ -97,7 +95,7 @@ export default function ProfileScreen() {
                 onPress={handleSignOut}
                 style={styles.actionBtn}
             />
-        </ScrollView>
+        </Screen>
     );
 }
 
@@ -119,7 +117,6 @@ function StatBox({
 }
 
 const styles = StyleSheet.create({
-    content: { padding: Spacing.lg, paddingBottom: Spacing.xxxxl },
     headerCard: {
         borderRadius: BorderRadius.xl,
         alignItems: 'center',

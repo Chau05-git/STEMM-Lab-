@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { ACTIVITIES } from '@/constants/activities';
 import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
@@ -12,10 +13,7 @@ export default function HelpScreen() {
     const colors = Colors[resolvedTheme];
 
     return (
-        <ScrollView
-            style={{ backgroundColor: colors.background }}
-            contentContainerStyle={styles.content}
-        >
+        <Screen scroll>
             <View style={styles.intro}>
                 <Ionicons name="school-outline" size={IconSize.xl} color={colors.primary} />
                 <ThemedText variant="bodyMedium" color="textSecondary" style={styles.introText}>
@@ -42,12 +40,11 @@ export default function HelpScreen() {
                     ))}
                 </View>
             ))}
-        </ScrollView>
+        </Screen>
     );
 }
 
 const styles = StyleSheet.create({
-    content: { padding: Spacing.lg, paddingBottom: Spacing.xxxxl },
     intro: { alignItems: 'center', marginBottom: Spacing.xl },
     introText: { textAlign: 'center', marginTop: Spacing.md, maxWidth: 320 },
     card: { borderRadius: BorderRadius.lg, padding: Spacing.md, marginBottom: Spacing.md },

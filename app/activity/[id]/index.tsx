@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from '@/components/ui/Button';
 import { getActivityById } from '@/constants/activities';
+import { activityHeaderOptions } from '@/constants/screenOptions';
 import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
 import { useSettings } from '@/context/SettingsContext';
 
@@ -29,11 +31,8 @@ export default function ActivityOverviewScreen() {
 
     return (
         <>
-            <Stack.Screen options={{ headerShown: true, title: '', headerStyle: { backgroundColor: colors.background }, headerShadowVisible: false, headerTintColor: colors.text }} />
-            <ScrollView
-                style={{ backgroundColor: colors.background }}
-                contentContainerStyle={styles.content}
-            >
+            <Stack.Screen options={activityHeaderOptions(colors, '')} />
+            <Screen scroll>
                 {/* Hero */}
                 <View style={[styles.hero, { backgroundColor: accent + '1A' }]}>
                     <ThemedText style={styles.icon}>{activity.icon}</ThemedText>
@@ -77,14 +76,13 @@ export default function ActivityOverviewScreen() {
                     onPress={() => router.push(`/activity/${activity.id}/instructions`)}
                     style={styles.cta}
                 />
-            </ScrollView>
+            </Screen>
         </>
     );
 }
 
 const styles = StyleSheet.create({
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    content: { padding: Spacing.lg, paddingBottom: Spacing.xxxxl },
     hero: {
         height: 140,
         borderRadius: BorderRadius.xl,

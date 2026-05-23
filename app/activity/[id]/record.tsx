@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from '@/components/ui/Button';
 import { getActivityById } from '@/constants/activities';
+import { activityHeaderOptions } from '@/constants/screenOptions';
 import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
 import { useSettings } from '@/context/SettingsContext';
 
@@ -32,11 +34,8 @@ export default function RecordScreen() {
 
     return (
         <>
-            <Stack.Screen options={{ headerShown: true, title: 'Record', headerStyle: { backgroundColor: colors.background }, headerShadowVisible: false, headerTintColor: colors.text, headerTitleStyle: { fontWeight: '700' } }} />
-            <ScrollView
-                style={{ backgroundColor: colors.background }}
-                contentContainerStyle={styles.content}
-            >
+            <Stack.Screen options={activityHeaderOptions(colors, 'Record')} />
+            <Screen scroll>
                 {/* Live sensor panel placeholder (real readout in Phase 3) */}
                 <View style={[styles.sensorPanel, { backgroundColor: colors.surface, borderColor: accent }]}>
                     <View style={[styles.sensorIcon, { backgroundColor: accent + '1A' }]}>
@@ -67,13 +66,12 @@ export default function RecordScreen() {
                     onPress={() => router.push(`/activity/${activity.id}/results`)}
                     style={styles.finishBtn}
                 />
-            </ScrollView>
+            </Screen>
         </>
     );
 }
 
 const styles = StyleSheet.create({
-    content: { padding: Spacing.lg, paddingBottom: Spacing.xxxxl },
     sensorPanel: {
         borderRadius: BorderRadius.xxl,
         borderWidth: 2,
