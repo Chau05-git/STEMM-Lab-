@@ -10,30 +10,99 @@ import { TextField } from '@/components/ui/TextField';
 import { getActivityById } from '@/constants/activities';
 import { activityHeaderOptions } from '@/constants/screenOptions';
 import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
+import type { ActivityAttempt } from '@/constants/types';
+import { useActivity } from '@/context/ActivityContext';
 import { useSettings } from '@/context/SettingsContext';
+import { useTeam } from '@/context/TeamContext';
+import { calculateParachute, parachuteScore, type CalculationResult } from '@/services/calculations';
+import { saveAttempt } from '@/services/database';
+import { getCurrentLocation } from '@/services/location';
 
 export default function ResultsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const { resolvedTheme } = useSettings();
+    const { activeAttempt, finishAttempt, discardAttempt } = useActivity();
+    const { setActivityProgress } = useTeam();
     const colors = Colors[resolvedTheme];
 
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
+    const [saving, setSaving] = useState(false);
 
     const activity = getActivityById(id);
     if (!activity) return null;
 
     const accent = activity.category === 'engineering' ? colors.engineering : colors.health;
 
+    // ── Compute live results from the recorded sensor readings ──
+    const reading = (label: string) =>
+        activeAttempt?.sensorReadings.find((r) => r.label === label)?.value ?? 0;
+
+    let results: CalculationResult[] = [];
+    if (activity.id === 'parachute-drop' && activeAttempt) {
+        results = calculateParachute({
+            distance: reading('dropHeight'),
+            mass: reading('mass'),
+            dropTime: reading('dropTime'),
+            contactTime: reading('contactTime'),
+        });
+    }
+
+    const handleSave = async () => {
+        setSaving(true);
+
+        const finished = finishAttempt();
+        if (finished) {
+            const loc = await getCurrentLocation();
+            const toSave: ActivityAttempt = {
+                ...finished,
+                rating,
+                comment,
+                gpsLatitude: loc?.latitude,
+                gpsLongitude: loc?.longitude,
+            };
+            await saveAttempt(toSave);
+
+            const score = activity.id === 'parachute-drop' ? parachuteScore(results) : 0;
+            await setActivityProgress(activity.id, {
+                status: 'completed',
+                bestScore: score,
+                bestScoreUnit: 'safety',
+                lastAttemptAt: Date.now(),
+            });
+        }
+        discardAttempt();
+        setSaving(false);
+        router.dismissAll();
+    };
+
     return (
         <>
             <Stack.Screen options={activityHeaderOptions(colors, 'Results')} />
             <Screen scroll>
-                {/* Formulas (shown by student level — full list for now) */}
+                {/* Computed results */}
+                {results.length > 0 ? (
+                    <>
+                        <ThemedText variant="titleMedium" style={styles.sectionTitle}>Your results</ThemedText>
+                        <View style={styles.resultGrid}>
+                            {results.map((r) => (
+                                <View key={r.name} style={[styles.resultCard, { backgroundColor: colors.surface }]}>
+                                    <ThemedText variant="caption" color="textTertiary">{r.name}</ThemedText>
+                                    <ThemedText variant="headlineSmall" style={{ color: accent }}>
+                                        {r.value}
+                                    </ThemedText>
+                                    <ThemedText variant="caption" color="textSecondary">{r.unit}</ThemedText>
+                                </View>
+                            ))}
+                        </View>
+                    </>
+                ) : null}
+
+                {/* Formula reference */}
                 {activity.formulas.length > 0 ? (
                     <>
-                        <ThemedText variant="titleMedium" style={styles.sectionTitle}>Calculations</ThemedText>
+                        <ThemedText variant="titleMedium" style={styles.sectionTitle}>How it&apos;s calculated</ThemedText>
                         {activity.formulas.map((f) => (
                             <View key={f.name} style={[styles.formulaCard, { backgroundColor: colors.surface }]}>
                                 <ThemedText variant="labelLarge" style={{ color: accent }}>{f.name}</ThemedText>
@@ -81,11 +150,7 @@ export default function ResultsScreen() {
                     style={styles.commentBox}
                 />
 
-                <Button
-                    label="Save & Finish"
-                    onPress={() => router.dismissAll()}
-                    style={styles.cta}
-                />
+                <Button label="Save & Finish" onPress={handleSave} loading={saving} style={styles.cta} />
             </Screen>
         </>
     );
@@ -93,11 +158,15 @@ export default function ResultsScreen() {
 
 const styles = StyleSheet.create({
     sectionTitle: { marginTop: Spacing.lg, marginBottom: Spacing.md },
-    formulaCard: {
-        padding: Spacing.md,
+    resultGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+    resultCard: {
+        width: '31%',
+        flexGrow: 1,
         borderRadius: BorderRadius.lg,
-        marginBottom: Spacing.sm,
+        padding: Spacing.md,
+        alignItems: 'center',
     },
+    formulaCard: { padding: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: Spacing.sm },
     formula: { marginVertical: Spacing.xxs, fontFamily: 'monospace' },
     bullet: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: Spacing.sm },
     bulletText: { flex: 1, marginLeft: Spacing.sm },
