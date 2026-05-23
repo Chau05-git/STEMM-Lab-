@@ -11,9 +11,15 @@ export interface CalculationResult {
     level: 'primary' | 'secondary';
 }
 
-const round = (n: number, dp = 3) => {
-    const f = 10 ** dp;
-    return Math.round(n * f) / f;
+/**
+ * Round to `dp` decimals without the classic `Math.round(n*f)/f` float bug
+ * (e.g. 1.005 → 1.01, not 1.00). Parsing via exponential notation avoids the
+ * binary multiplication error.
+ */
+const round = (n: number, dp = 3): number => {
+    if (!Number.isFinite(n)) return 0;
+    const m = Number(`${n}e${dp}`);
+    return Number(`${Math.round(m)}e-${dp}`);
 };
 
 export const GRAVITY = 9.81; // m/s²
@@ -37,7 +43,7 @@ export function acceleration(vFinal: number, vInitial: number, time: number): Ca
         name: 'Acceleration',
         value: round(a),
         unit: 'm/s²',
-        formula: `a = (v_final − v_initial) / t = (${vFinal} − ${vInitial}) / ${time}`,
+        formula: `a = (v_final − v_initial) / t = (${round(vFinal)} − ${vInitial}) / ${time}`,
         level: 'secondary',
     };
 }
@@ -47,7 +53,7 @@ export function netForce(mass: number, accel: number): CalculationResult {
         name: 'Net Force',
         value: round(mass * accel),
         unit: 'N',
-        formula: `F_net = m × a = ${mass} × ${accel}`,
+        formula: `F_net = m × a = ${mass} × ${round(accel)}`,
         level: 'secondary',
     };
 }
@@ -67,7 +73,7 @@ export function dragForce(weightN: number, netForceN: number): CalculationResult
         name: 'Drag Force',
         value: round(Math.abs(weightN - netForceN)),
         unit: 'N',
-        formula: `F_drag = W − F_net = ${weightN} − ${netForceN}`,
+        formula: `F_drag = W − F_net = ${round(weightN)} − ${round(netForceN)}`,
         level: 'secondary',
     };
 }
@@ -78,7 +84,7 @@ export function gForceNoBounce(vImpact: number, contactTime: number): Calculatio
         name: 'G-Force (no bounce)',
         value: round(g, 2),
         unit: 'g',
-        formula: `g = v / (t_contact × g) = ${vImpact} / (${contactTime} × ${GRAVITY})`,
+        formula: `g = v / (t_contact × g) = ${round(vImpact)} / (${contactTime} × ${GRAVITY})`,
         level: 'secondary',
     };
 }
@@ -94,15 +100,22 @@ export interface ParachuteInput {
 export function calculateParachute({ distance, mass, dropTime, contactTime }: ParachuteInput): CalculationResult[] {
     if (!(distance > 0) || !(dropTime > 0)) return [];
 
+    // Chain with EXACT (unrounded) intermediates to avoid compounding rounding
+    // error; each function still rounds only its own displayed value.
+    const vRaw = distance / dropTime;
+    const aRaw = vRaw / dropTime;          // (vRaw − 0) / dropTime
+    const wRaw = mass * GRAVITY;
+    const nfRaw = mass * aRaw;
+
     const v = finalVelocity(distance, dropTime);
-    const a = acceleration(v.value, 0, dropTime);
+    const a = acceleration(vRaw, 0, dropTime);
     const w = weight(mass);
-    const nf = netForce(mass, a.value);
-    const df = dragForce(w.value, nf.value);
+    const nf = netForce(mass, aRaw);
+    const df = dragForce(wRaw, nfRaw);
 
     const results = [v, a, nf, w, df];
     if (contactTime && contactTime > 0) {
-        results.push(gForceNoBounce(v.value, contactTime));
+        results.push(gForceNoBounce(vRaw, contactTime));
     }
     return results;
 }

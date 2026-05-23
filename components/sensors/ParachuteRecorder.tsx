@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -24,7 +25,7 @@ function makeId(): string {
 export function ParachuteRecorder({ activity, accent }: Props) {
     const router = useRouter();
     const { resolvedTheme } = useSettings();
-    const { addSensorReading } = useActivity();
+    const { setSensorReadings, setVideoUri } = useActivity();
     const colors = Colors[resolvedTheme];
 
     const timerRef = useRef(createTimer());
@@ -34,7 +35,26 @@ export function ParachuteRecorder({ activity, accent }: Props) {
     const [height, setHeight] = useState('');
     const [mass, setMass] = useState('');
     const [contact, setContact] = useState('');
+    const [videoTaken, setVideoTaken] = useState(false);
     const [error, setError] = useState('');
+
+    // Record the drop with the system camera (optional). Stores the video URI
+    // on the attempt — uploaded to Firebase Storage in a later phase.
+    const handleRecordVideo = async () => {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) {
+            setError('Camera permission is needed to record the drop.');
+            return;
+        }
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['videos'],
+            videoMaxDuration: 30,
+        });
+        if (!result.canceled && result.assets[0]) {
+            setVideoUri(result.assets[0].uri);
+            setVideoTaken(true);
+        }
+    };
 
     useEffect(() => {
         const t = timerRef.current;
@@ -59,11 +79,14 @@ export function ParachuteRecorder({ activity, accent }: Props) {
         setDropTime(0);
     };
 
+    // Accept both comma and dot as the decimal separator (e.g. "0,2" → 0.2)
+    const toNumber = (s: string) => parseFloat(s.replace(',', '.'));
+
     const handleContinue = () => {
         setError('');
-        const h = parseFloat(height);
-        const m = parseFloat(mass);
-        const c = parseFloat(contact);
+        const h = toNumber(height);
+        const m = toNumber(mass);
+        const c = toNumber(contact);
 
         if (dropTime <= 0) return setError('Measure the drop time first.');
         if (!(h > 0)) return setError('Enter the drop height in metres.');
@@ -78,7 +101,8 @@ export function ParachuteRecorder({ activity, accent }: Props) {
         if (c > 0) {
             readings.push({ id: makeId(), sensorType: 'timer', value: c, unit: 's', timestamp: now, label: 'contactTime' });
         }
-        readings.forEach(addSensorReading);
+        // Replace (not append) so editing values and re-submitting recomputes correctly.
+        setSensorReadings(readings);
 
         router.push(`/activity/${activity.id}/results`);
     };
@@ -124,6 +148,22 @@ export function ParachuteRecorder({ activity, accent }: Props) {
                     : 'Tap Start just before releasing the toy.'}
             </ThemedText>
 
+            {/* Optional drop video */}
+            <Pressable
+                onPress={handleRecordVideo}
+                style={[styles.videoBtn, { borderColor: videoTaken ? colors.success : colors.border }]}
+                accessibilityLabel="Record drop video"
+            >
+                <Ionicons
+                    name={videoTaken ? 'checkmark-circle' : 'videocam-outline'}
+                    size={20}
+                    color={videoTaken ? colors.success : accent}
+                />
+                <ThemedText variant="labelLarge" style={styles.videoBtnText}>
+                    {videoTaken ? 'Video attached' : 'Record drop video (optional)'}
+                </ThemedText>
+            </Pressable>
+
             {/* Inputs */}
             <View style={styles.inputs}>
                 <TextField
@@ -146,9 +186,14 @@ export function ParachuteRecorder({ activity, accent }: Props) {
                     onChangeText={setContact}
                     placeholder="e.g. 0.05 (for g-force)"
                     keyboardType="decimal-pad"
-                    error={error}
                 />
             </View>
+
+            {error ? (
+                <ThemedText variant="bodySmall" color="error" style={styles.error}>
+                    {error}
+                </ThemedText>
+            ) : null}
 
             <Button label="View Results" onPress={handleContinue} />
         </View>
@@ -183,7 +228,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     hint: { textAlign: 'center', marginBottom: Spacing.lg },
+    videoBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 48,
+        borderRadius: BorderRadius.lg,
+        borderWidth: 1.5,
+        marginBottom: Spacing.lg,
+    },
+    videoBtnText: { marginLeft: Spacing.sm },
     inputs: { marginBottom: Spacing.sm },
+    error: { marginBottom: Spacing.md },
 });
 
 export default ParachuteRecorder;

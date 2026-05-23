@@ -75,6 +75,13 @@ export default ({ config }) => ({
                 },
             ],
             'expo-sqlite',
+            'expo-video',
+            [
+                'expo-image-picker',
+                {
+                    cameraPermission: 'STEMM Lab uses the camera to record your activity drops and experiments.',
+                },
+            ],
             [
                 'react-native-google-mobile-ads',
                 {

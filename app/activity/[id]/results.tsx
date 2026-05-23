@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
+import { VideoReview } from '@/components/VideoReview';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { getActivityById } from '@/constants/activities';
@@ -81,6 +82,14 @@ export default function ResultsScreen() {
         <>
             <Stack.Screen options={activityHeaderOptions(colors, 'Results')} />
             <Screen scroll>
+                {/* Recorded drop video — scrub to read off contact time */}
+                {activeAttempt?.videoUri ? (
+                    <>
+                        <ThemedText variant="titleMedium" style={styles.sectionTitle}>Your recording</ThemedText>
+                        <VideoReview uri={activeAttempt.videoUri} />
+                    </>
+                ) : null}
+
                 {/* Computed results */}
                 {results.length > 0 ? (
                     <>

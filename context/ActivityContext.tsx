@@ -11,6 +11,7 @@ interface ActivityContextValue {
     activeAttempt: ActivityAttempt | null;
     startAttempt: (activityId: string, teamId: string, iteration?: number) => void;
     addSensorReading: (reading: SensorReading) => void;
+    setSensorReadings: (readings: SensorReading[]) => void;
     setDataTableRows: (rows: DataTableRow[]) => void;
     setRating: (rating: number) => void;
     setComment: (comment: string) => void;
@@ -24,6 +25,7 @@ const ActivityContext = createContext<ActivityContextValue>({
     activeAttempt: null,
     startAttempt: () => {},
     addSensorReading: () => {},
+    setSensorReadings: () => {},
     setDataTableRows: () => {},
     setRating: () => {},
     setComment: () => {},
@@ -61,6 +63,10 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
         );
     };
 
+    // Replace the whole readings array (avoids stale duplicates on re-submit).
+    const setSensorReadings = (readings: SensorReading[]) =>
+        setAttempt((prev) => (prev ? { ...prev, sensorReadings: readings } : prev));
+
     const setDataTableRows = (rows: DataTableRow[]) =>
         setAttempt((prev) => (prev ? { ...prev, dataTableRows: rows } : prev));
 
@@ -91,6 +97,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
                 activeAttempt,
                 startAttempt,
                 addSensorReading,
+                setSensorReadings,
                 setDataTableRows,
                 setRating,
                 setComment,
