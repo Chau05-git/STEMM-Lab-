@@ -15,7 +15,7 @@ import type { ActivityAttempt } from '@/constants/types';
 import { useActivity } from '@/context/ActivityContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTeam } from '@/context/TeamContext';
-import { calculateHandFan, calculateParachute, calculateSound, parachuteScore, HF_DELIM, type CalculationResult, type HandFanMaterial } from '@/services/calculations';
+import { calculateEarthquake, calculateHandFan, calculateParachute, calculateSound, parachuteScore, HF_DELIM, type CalculationResult, type HandFanMaterial } from '@/services/calculations';
 import { saveAttempt } from '@/services/database';
 import { getCurrentLocation } from '@/services/location';
 import { getHearingRisk } from '@/services/sensors/audio';
@@ -64,6 +64,12 @@ export default function ResultsScreen() {
             };
         });
         results = calculateHandFan(designs);
+    } else if (activity.id === 'earthquake-structure' && activeAttempt) {
+        const designs = activeAttempt.sensorReadings.map((r) => ({
+            label: r.label ?? 'Design',
+            peakMm: r.value,
+        }));
+        results = calculateEarthquake(designs);
     }
 
     // For sound, classify the loudest (peak) reading into a hearing-risk band.

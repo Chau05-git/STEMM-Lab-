@@ -199,3 +199,41 @@ export function calculateHandFan(designs: HandFanDesign[]): CalculationResult[] 
         };
     });
 }
+
+// ─── Activity 4: Earthquake-Resistant Structure ─────────────────
+
+export interface EarthquakeDesign {
+    label: string;
+    peakMm: number; // peak vibration amplitude over the shake test (mm)
+}
+
+/** 0–100 stability score — less movement = more stable. */
+export function earthquakeStability(peakMm: number): number {
+    return Math.round(Math.max(0, Math.min(100, 100 - peakMm * 10)));
+}
+
+/**
+ * One card per design (peak amplitude + stability score) plus a card naming
+ * the most stable design — the one whose structure absorbed the most shaking.
+ */
+export function calculateEarthquake(designs: EarthquakeDesign[]): CalculationResult[] {
+    if (designs.length === 0) return [];
+
+    const cards: CalculationResult[] = designs.map((d) => ({
+        name: d.label,
+        value: round(d.peakMm, 1),
+        unit: `mm · ${earthquakeStability(d.peakMm)}% stable`,
+        formula: 'peak = max(|vibration amplitude|) over the test',
+        level: 'primary',
+    }));
+
+    const best = designs.reduce((a, b) => (b.peakMm < a.peakMm ? b : a));
+    cards.push({
+        name: '🏆 Most stable design',
+        value: earthquakeStability(best.peakMm),
+        unit: `/100 — ${best.label}`,
+        formula: 'highest stability = lowest peak movement',
+        level: 'primary',
+    });
+    return cards;
+}
