@@ -15,7 +15,7 @@ import type { ActivityAttempt } from '@/constants/types';
 import { useActivity } from '@/context/ActivityContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTeam } from '@/context/TeamContext';
-import { calculateParachute, parachuteScore, type CalculationResult } from '@/services/calculations';
+import { calculateParachute, calculateSound, parachuteScore, type CalculationResult } from '@/services/calculations';
 import { saveAttempt } from '@/services/database';
 import { getCurrentLocation } from '@/services/location';
 
@@ -48,6 +48,11 @@ export default function ResultsScreen() {
             dropTime: reading('dropTime'),
             contactTime: reading('contactTime'),
         });
+    } else if (activity.id === 'sound-pollution' && activeAttempt) {
+        const dbValues = activeAttempt.sensorReadings
+            .filter((r) => r.sensorType === 'microphone')
+            .map((r) => r.value);
+        results = calculateSound(dbValues);
     }
 
     const handleSave = async () => {

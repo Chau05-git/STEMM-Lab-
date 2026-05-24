@@ -7,6 +7,7 @@ import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from '@/components/ui/Button';
 import { ParachuteRecorder } from '@/components/sensors/ParachuteRecorder';
+import { SoundRecorder } from '@/components/sensors/SoundRecorder';
 import { getActivityById } from '@/constants/activities';
 import { activityHeaderOptions } from '@/constants/screenOptions';
 import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
@@ -51,6 +52,8 @@ export default function RecordScreen() {
             <Screen scroll>
                 {activity.id === 'parachute-drop' ? (
                     <ParachuteRecorder activity={activity} accent={accent} />
+                ) : activity.id === 'sound-pollution' ? (
+                    <SoundRecorder activity={activity} accent={accent} />
                 ) : (
                     /* Other activities get their recorders in later phases */
                     <View>

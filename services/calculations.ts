@@ -130,3 +130,32 @@ export function parachuteScore(results: CalculationResult[]): number {
     if (velocity <= 0) return 0;
     return Math.round((10 / velocity) * 100) / 100;
 }
+
+// ─── Activity 2: Sound Pollution ─────────────────────────────────
+
+export function averageDb(values: number[]): CalculationResult {
+    const avg = values.length ? values.reduce((s, v) => s + v, 0) / values.length : 0;
+    return {
+        name: 'Average Sound Level',
+        value: round(avg, 1),
+        unit: 'dB',
+        formula: `avg = Σ(readings) / n = total / ${values.length}`,
+        level: 'primary',
+    };
+}
+
+export function peakDb(values: number[]): CalculationResult {
+    return {
+        name: 'Peak Sound Level',
+        value: values.length ? Math.max(...values) : 0,
+        unit: 'dB',
+        formula: 'peak = max(readings)',
+        level: 'primary',
+    };
+}
+
+/** Average + peak from a list of dB readings. */
+export function calculateSound(values: number[]): CalculationResult[] {
+    if (values.length === 0) return [];
+    return [averageDb(values), peakDb(values)];
+}
