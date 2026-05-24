@@ -36,10 +36,11 @@ export function ParachuteRecorder({ activity, accent }: Props) {
     const [mass, setMass] = useState('');
     const [contact, setContact] = useState('');
     const [videoTaken, setVideoTaken] = useState(false);
+    const [fromVideo, setFromVideo] = useState(false);
     const [error, setError] = useState('');
 
-    // Record the drop with the system camera (optional). Stores the video URI
-    // on the attempt — uploaded to Firebase Storage in a later phase.
+    // Record the drop with the system camera. The video's own length becomes
+    // the drop time (fall duration), and the clip is stored on the attempt.
     const handleRecordVideo = async () => {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
         if (!perm.granted) {
@@ -51,8 +52,16 @@ export function ParachuteRecorder({ activity, accent }: Props) {
             videoMaxDuration: 30,
         });
         if (!result.canceled && result.assets[0]) {
-            setVideoUri(result.assets[0].uri);
+            const asset = result.assets[0];
+            setVideoUri(asset.uri);
             setVideoTaken(true);
+            // asset.duration is in milliseconds → use it as the drop time.
+            if (asset.duration && asset.duration > 0) {
+                setDropTime(Math.round(asset.duration) / 1000);
+                setFromVideo(true);
+                timerRef.current.reset();
+                setTimer({ isRunning: false, elapsedMs: 0 });
+            }
         }
     };
 
@@ -67,8 +76,10 @@ export function ParachuteRecorder({ activity, accent }: Props) {
         if (timer.isRunning) {
             const ms = t.stop();
             setDropTime(Math.round(ms) / 1000);
+            setFromVideo(false);
         } else {
             setDropTime(0);
+            setFromVideo(false);
             t.start();
         }
     };
@@ -77,6 +88,7 @@ export function ParachuteRecorder({ activity, accent }: Props) {
         timerRef.current.reset();
         setTimer({ isRunning: false, elapsedMs: 0 });
         setDropTime(0);
+        setFromVideo(false);
     };
 
     // Accept both comma and dot as the decimal separator (e.g. "0,2" → 0.2)
@@ -117,7 +129,9 @@ export function ParachuteRecorder({ activity, accent }: Props) {
                 <ThemedText variant="displayMedium" style={[styles.timerValue, { color: accent }]}>
                     {seconds}
                 </ThemedText>
-                <ThemedText variant="bodySmall" color="textTertiary">seconds</ThemedText>
+                <ThemedText variant="bodySmall" color="textTertiary">
+                    {fromVideo ? 'seconds (from video)' : 'seconds'}
+                </ThemedText>
             </View>
 
             <View style={styles.controls}>
@@ -145,7 +159,9 @@ export function ParachuteRecorder({ activity, accent }: Props) {
             <ThemedText variant="bodySmall" color="textTertiary" style={styles.hint}>
                 {timer.isRunning
                     ? 'Drop now! Tap Stop the moment it lands.'
-                    : 'Tap Start just before releasing the toy.'}
+                    : fromVideo
+                        ? 'Drop time taken from your video length. Or tap Start to time it manually.'
+                        : 'Tap Start to time the drop, or record a video below to use its length.'}
             </ThemedText>
 
             {/* Optional drop video */}
