@@ -64,8 +64,8 @@ export default function ActivityOverviewScreen() {
 
                 {/* Equipment */}
                 <ThemedText variant="titleMedium" style={styles.sectionTitle}>Equipment</ThemedText>
-                {activity.equipment.map((item) => (
-                    <View key={item} style={styles.bullet}>
+                {activity.equipment.map((item, i) => (
+                    <View key={`${item}-${i}`} style={styles.bullet}>
                         <Ionicons name="ellipse" size={6} color={accent} style={styles.bulletDot} />
                         <ThemedText variant="bodyMedium" style={styles.bulletText}>{item}</ThemedText>
                     </View>
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: Spacing.lg,
     },
-    icon: { fontSize: 72 },
+    icon: { fontSize: 72, lineHeight: 92, textAlign: 'center', includeFontPadding: false },
     category: { letterSpacing: 1, marginBottom: Spacing.xs },
     title: { marginBottom: Spacing.sm },
     overview: { marginBottom: Spacing.lg },

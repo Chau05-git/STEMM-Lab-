@@ -15,7 +15,7 @@ import type { ActivityAttempt } from '@/constants/types';
 import { useActivity } from '@/context/ActivityContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTeam } from '@/context/TeamContext';
-import { calculateHandFan, calculateParachute, calculateSound, parachuteScore, type CalculationResult } from '@/services/calculations';
+import { calculateHandFan, calculateParachute, calculateSound, parachuteScore, HF_DELIM, type CalculationResult, type HandFanMaterial } from '@/services/calculations';
 import { saveAttempt } from '@/services/database';
 import { getCurrentLocation } from '@/services/location';
 import { getHearingRisk } from '@/services/sensors/audio';
@@ -55,11 +55,15 @@ export default function ResultsScreen() {
             .map((r) => r.value);
         results = calculateSound(dbValues);
     } else if (activity.id === 'hand-fan' && activeAttempt) {
-        const k = activeAttempt.sensorReadings.find((r) => r.label === 'stiffness')?.value ?? 0.05;
-        const designs = activeAttempt.sensorReadings
-            .filter((r) => r.label !== 'stiffness')
-            .map((r) => ({ label: r.label ?? 'Design', angle: r.value }));
-        results = calculateHandFan(designs, k);
+        const designs = activeAttempt.sensorReadings.map((r) => {
+            const [label, matKey] = (r.label ?? '').split(HF_DELIM);
+            return {
+                label: label || 'Design',
+                angle: r.value,
+                material: (matKey as HandFanMaterial) || 'paper',
+            };
+        });
+        results = calculateHandFan(designs);
     }
 
     // For sound, classify the loudest (peak) reading into a hearing-risk band.
@@ -112,8 +116,8 @@ export default function ResultsScreen() {
                     <>
                         <ThemedText variant="titleMedium" style={styles.sectionTitle}>Your results</ThemedText>
                         <View style={styles.resultGrid}>
-                            {results.map((r) => (
-                                <View key={r.name} style={[styles.resultCard, { backgroundColor: colors.surface }]}>
+                            {results.map((r, i) => (
+                                <View key={`${r.name}-${i}`} style={[styles.resultCard, { backgroundColor: colors.surface }]}>
                                     <ThemedText variant="caption" color="textTertiary">{r.name}</ThemedText>
                                     <ThemedText variant="headlineSmall" style={{ color: accent }}>
                                         {r.value}
@@ -144,14 +148,13 @@ export default function ResultsScreen() {
                 {activity.formulas.length > 0 ? (
                     <>
                         <ThemedText variant="titleMedium" style={styles.sectionTitle}>How it&apos;s calculated</ThemedText>
-                        {activity.formulas.map((f) => (
-                            <View key={f.name} style={[styles.formulaCard, { backgroundColor: colors.surface }]}>
+                        {activity.formulas.map((f, i) => (
+                            <View key={`${f.name}-${i}`} style={[styles.formulaCard, { backgroundColor: colors.surface }]}>
                                 <ThemedText variant="labelLarge" style={{ color: accent }}>{f.name}</ThemedText>
                                 <ThemedText variant="bodyMedium" style={styles.formula}>{f.formula}</ThemedText>
                                 {f.example ? (
                                     <ThemedText variant="caption" color="textTertiary">e.g. {f.example}</ThemedText>
                                 ) : null}
-                                <ThemedText variant="caption" color="textSecondary">{f.example}</ThemedText>
                             </View>
                         ))}
                     </>

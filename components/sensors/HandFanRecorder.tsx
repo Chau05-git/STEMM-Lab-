@@ -10,7 +10,7 @@ import { BorderRadius, Colors, Spacing } from '@/constants/theme';
 import type { ActivityDefinition, SensorReading } from '@/constants/types';
 import { useActivity } from '@/context/ActivityContext';
 import { useSettings } from '@/context/SettingsContext';
-import { HAND_FAN_MATERIALS, type HandFanMaterial } from '@/services/calculations';
+import { HAND_FAN_MATERIALS, HF_DELIM, type HandFanMaterial } from '@/services/calculations';
 import { createAccelerometerService } from '@/services/sensors/accelerometer';
 
 interface Props {
@@ -68,13 +68,15 @@ export function HandFanRecorder({ activity, accent }: Props) {
     const handleCapture = () => {
         if (peak <= 0) return setError('Start the sensor and fan the material first.');
         setError('');
+        const name = design.trim() || `Design ${saved.length + 1}`;
         const reading: SensorReading = {
             id: makeId(),
             sensorType: 'accelerometer',
             value: peak,
             unit: '°',
             timestamp: Date.now(),
-            label: design.trim() || `Design ${saved.length + 1}`,
+            // Pack the material key into the label so each design keeps its own.
+            label: `${name}${HF_DELIM}${material}`,
         };
         setSaved((prev) => [...prev, reading]);
         setDesign('');
@@ -83,16 +85,7 @@ export function HandFanRecorder({ activity, accent }: Props) {
 
     const handleContinue = () => {
         if (saved.length === 0) return setError('Capture at least one design first.');
-        // Store the chosen material stiffness so Results can estimate force.
-        const stiffness: SensorReading = {
-            id: makeId(),
-            sensorType: 'accelerometer',
-            value: HAND_FAN_MATERIALS[material].k,
-            unit: 'N/rad',
-            timestamp: Date.now(),
-            label: 'stiffness',
-        };
-        setSensorReadings([stiffness, ...saved]);
+        setSensorReadings(saved);
         router.push(`/activity/${activity.id}/results`);
     };
 
@@ -176,16 +169,20 @@ export function HandFanRecorder({ activity, accent }: Props) {
             {/* Saved designs */}
             {saved.length > 0 ? (
                 <View style={[styles.savedCard, { backgroundColor: colors.surface }]}>
-                    {saved.map((r) => (
-                        <View key={r.id} style={styles.savedRow}>
-                            <ThemedText variant="bodyMedium" style={styles.savedLabel} numberOfLines={1}>
-                                {r.label}
-                            </ThemedText>
-                            <ThemedText variant="labelLarge" style={{ color: accent }}>
-                                {r.value.toFixed(1)}°
-                            </ThemedText>
-                        </View>
-                    ))}
+                    {saved.map((r) => {
+                        const [name, matKey] = (r.label ?? '').split(HF_DELIM);
+                        const matLabel = HAND_FAN_MATERIALS[matKey as HandFanMaterial]?.label ?? '';
+                        return (
+                            <View key={r.id} style={styles.savedRow}>
+                                <ThemedText variant="bodyMedium" style={styles.savedLabel} numberOfLines={1}>
+                                    {name} · {matLabel}
+                                </ThemedText>
+                                <ThemedText variant="labelLarge" style={{ color: accent }}>
+                                    {r.value.toFixed(1)}°
+                                </ThemedText>
+                            </View>
+                        );
+                    })}
                 </View>
             ) : null}
 

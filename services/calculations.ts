@@ -170,34 +170,32 @@ export const HAND_FAN_MATERIALS = {
 
 export type HandFanMaterial = keyof typeof HAND_FAN_MATERIALS;
 
+/** Delimiter used to pack the material key into a design reading's label. */
+export const HF_DELIM = '||';
+
 export interface HandFanDesign {
     label: string;
-    angle: number; // bend angle in degrees
+    angle: number;            // bend angle in degrees
+    material: HandFanMaterial; // each design records its own material
 }
 
 /**
- * One card per design showing its bend angle, plus a force estimate for the
- * steepest bend using the chosen material's stiffness (F ≈ k × θ).
+ * One card per design — labelled with its material — showing the bend angle
+ * and the estimated force for that material (F ≈ k × θ).
  */
-export function calculateHandFan(designs: HandFanDesign[], k: number): CalculationResult[] {
+export function calculateHandFan(designs: HandFanDesign[]): CalculationResult[] {
     if (designs.length === 0) return [];
 
-    const cards: CalculationResult[] = designs.map((d) => ({
-        name: d.label,
-        value: round(d.angle, 1),
-        unit: '°',
-        formula: 'bend angle from accelerometer tilt',
-        level: 'primary',
-    }));
-
-    const maxAngle = Math.max(...designs.map((d) => d.angle));
-    const thetaRad = (maxAngle * Math.PI) / 180;
-    cards.push({
-        name: 'Force (steepest bend)',
-        value: round(k * thetaRad, 4),
-        unit: 'N',
-        formula: `F = k × θ = ${k} × ${round(thetaRad, 3)} rad`,
-        level: 'secondary',
+    return designs.map((d) => {
+        const mat = HAND_FAN_MATERIALS[d.material] ?? HAND_FAN_MATERIALS.paper;
+        const thetaRad = (d.angle * Math.PI) / 180;
+        const force = round(mat.k * thetaRad, 4);
+        return {
+            name: `${d.label} · ${mat.label}`,
+            value: round(d.angle, 1),
+            unit: `° · F≈${force} N`,
+            formula: `F = k × θ = ${mat.k} × ${round(thetaRad, 3)} rad`,
+            level: 'primary',
+        };
     });
-    return cards;
 }

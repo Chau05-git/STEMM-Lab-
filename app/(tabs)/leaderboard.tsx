@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.lg,
         marginBottom: Spacing.sm,
     },
-    icon: { fontSize: 28, marginRight: Spacing.md },
+    icon: { fontSize: 28, lineHeight: 36, marginRight: Spacing.md, includeFontPadding: false },
     rowText: { flex: 1 },
     emptyState: { alignItems: 'center', marginTop: Spacing.xxxl },
     emptyText: { marginTop: Spacing.md, textAlign: 'center' },

@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    icon: { fontSize: 40 },
+    icon: { fontSize: 40, lineHeight: 52, textAlign: 'center', includeFontPadding: false },
     body: { padding: Spacing.md },
     title: { marginBottom: Spacing.xxs, minHeight: 40 },
     footer: {

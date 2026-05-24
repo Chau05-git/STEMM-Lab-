@@ -28,8 +28,8 @@ export default function HelpScreen() {
                         <ThemedText style={styles.icon}>{activity.icon}</ThemedText>
                         <ThemedText variant="titleSmall" style={styles.cardTitle}>{activity.name}</ThemedText>
                     </View>
-                    {activity.curriculumLinks.map((link) => (
-                        <View key={link.code} style={styles.linkRow}>
+                    {activity.curriculumLinks.map((link, i) => (
+                        <View key={`${link.code}-${i}`} style={styles.linkRow}>
                             <ThemedText variant="labelSmall" color="primary" style={styles.code}>
                                 {link.code}
                             </ThemedText>
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     introText: { textAlign: 'center', marginTop: Spacing.md, maxWidth: 320 },
     card: { borderRadius: BorderRadius.lg, padding: Spacing.md, marginBottom: Spacing.md },
     cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm },
-    icon: { fontSize: 24, marginRight: Spacing.sm },
+    icon: { fontSize: 24, lineHeight: 32, marginRight: Spacing.sm, includeFontPadding: false },
     cardTitle: { flex: 1 },
     linkRow: { marginBottom: Spacing.xs },
     code: { marginBottom: 2 },
