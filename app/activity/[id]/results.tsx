@@ -18,6 +18,7 @@ import { useTeam } from '@/context/TeamContext';
 import { calculateParachute, calculateSound, parachuteScore, type CalculationResult } from '@/services/calculations';
 import { saveAttempt } from '@/services/database';
 import { getCurrentLocation } from '@/services/location';
+import { getHearingRisk } from '@/services/sensors/audio';
 
 export default function ResultsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,6 +55,11 @@ export default function ResultsScreen() {
             .map((r) => r.value);
         results = calculateSound(dbValues);
     }
+
+    // For sound, classify the loudest (peak) reading into a hearing-risk band.
+    const peakSound = results.find((r) => r.name === 'Peak Sound Level')?.value ?? 0;
+    const soundRisk =
+        activity.id === 'sound-pollution' && peakSound > 0 ? getHearingRisk(peakSound) : null;
 
     const handleSave = async () => {
         setSaving(true);
@@ -110,6 +116,21 @@ export default function ResultsScreen() {
                                 </View>
                             ))}
                         </View>
+
+                        {/* Hearing-risk classification for the loudest reading */}
+                        {soundRisk ? (
+                            <View style={[styles.riskBanner, { backgroundColor: soundRisk.color + '1A', borderColor: soundRisk.color }]}>
+                                <Ionicons name="ear-outline" size={IconSize.lg} color={soundRisk.color} />
+                                <View style={styles.riskText}>
+                                    <ThemedText variant="labelLarge" style={{ color: soundRisk.color }}>
+                                        {soundRisk.level}
+                                    </ThemedText>
+                                    <ThemedText variant="caption" color="textSecondary">
+                                        {soundRisk.description}
+                                    </ThemedText>
+                                </View>
+                            </View>
+                        ) : null}
                     </>
                 ) : null}
 
@@ -124,6 +145,7 @@ export default function ResultsScreen() {
                                 {f.example ? (
                                     <ThemedText variant="caption" color="textTertiary">e.g. {f.example}</ThemedText>
                                 ) : null}
+                                <ThemedText variant="caption" color="textSecondary">{f.example}</ThemedText>
                             </View>
                         ))}
                     </>
@@ -180,6 +202,15 @@ const styles = StyleSheet.create({
         padding: Spacing.md,
         alignItems: 'center',
     },
+    riskBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.md,
+        marginTop: Spacing.md,
+    },
+    riskText: { flex: 1, marginLeft: Spacing.md },
     formulaCard: { padding: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: Spacing.sm },
     formula: { marginVertical: Spacing.xxs, fontFamily: 'monospace' },
     bullet: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: Spacing.sm },
