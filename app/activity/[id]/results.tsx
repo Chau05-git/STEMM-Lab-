@@ -15,7 +15,7 @@ import type { ActivityAttempt } from '@/constants/types';
 import { useActivity } from '@/context/ActivityContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTeam } from '@/context/TeamContext';
-import { calculateParachute, calculateSound, parachuteScore, type CalculationResult } from '@/services/calculations';
+import { calculateHandFan, calculateParachute, calculateSound, parachuteScore, type CalculationResult } from '@/services/calculations';
 import { saveAttempt } from '@/services/database';
 import { getCurrentLocation } from '@/services/location';
 import { getHearingRisk } from '@/services/sensors/audio';
@@ -54,6 +54,12 @@ export default function ResultsScreen() {
             .filter((r) => r.sensorType === 'microphone')
             .map((r) => r.value);
         results = calculateSound(dbValues);
+    } else if (activity.id === 'hand-fan' && activeAttempt) {
+        const k = activeAttempt.sensorReadings.find((r) => r.label === 'stiffness')?.value ?? 0.05;
+        const designs = activeAttempt.sensorReadings
+            .filter((r) => r.label !== 'stiffness')
+            .map((r) => ({ label: r.label ?? 'Design', angle: r.value }));
+        results = calculateHandFan(designs, k);
     }
 
     // For sound, classify the loudest (peak) reading into a hearing-risk band.

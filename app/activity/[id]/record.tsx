@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from '@/components/ui/Button';
+import { HandFanRecorder } from '@/components/sensors/HandFanRecorder';
 import { ParachuteRecorder } from '@/components/sensors/ParachuteRecorder';
 import { SoundRecorder } from '@/components/sensors/SoundRecorder';
 import { getActivityById } from '@/constants/activities';
@@ -54,6 +55,8 @@ export default function RecordScreen() {
                     <ParachuteRecorder activity={activity} accent={accent} />
                 ) : activity.id === 'sound-pollution' ? (
                     <SoundRecorder activity={activity} accent={accent} />
+                ) : activity.id === 'hand-fan' ? (
+                    <HandFanRecorder activity={activity} accent={accent} />
                 ) : (
                     /* Other activities get their recorders in later phases */
                     <View>
