@@ -28,8 +28,10 @@ export default function MapScreen() {
             let active = true;
             (async () => {
                 const all = isCloud && user ? await getAttemptsCloud(user.uid) : await getAllAttempts();
-                // Only records that were GPS-tagged can be placed on the map.
-                const tagged = all.filter((a) => a.gpsLatitude != null && a.gpsLongitude != null);
+                // Only GPS-tagged records can be placed on the map; newest first.
+                const tagged = all
+                    .filter((a) => a.gpsLatitude != null && a.gpsLongitude != null)
+                    .sort((a, b) => (b.completedAt ?? b.startedAt) - (a.completedAt ?? a.startedAt));
                 if (active) setRecords(tagged);
             })();
             return () => { active = false; };
@@ -51,36 +53,39 @@ export default function MapScreen() {
         );
     }
 
-    const first = records[0];
+    // Show ONLY the most recently completed challenge — a single pin, single
+    // tag. (Per-record locations are viewed from the record detail screen.)
+    const latest = records[0];
+    const activity = getActivityById(latest.activityId);
+    const pinColor = activity?.category === 'health' ? colors.health : colors.engineering;
     const region = {
-        latitude: first.gpsLatitude!,
-        longitude: first.gpsLongitude!,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
+        latitude: latest.gpsLatitude!,
+        longitude: latest.gpsLongitude!,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
     };
 
+    // Remount (re-centre) when the latest record changes.
     return (
         <View style={styles.container}>
-            <MapView style={StyleSheet.absoluteFillObject} provider={PROVIDER_DEFAULT} initialRegion={region}>
-                {records.map((rec) => {
-                    const activity = getActivityById(rec.activityId);
-                    const pinColor = activity?.category === 'health' ? colors.health : colors.engineering;
-                    return (
-                        <Marker
-                            key={rec.id}
-                            coordinate={{ latitude: rec.gpsLatitude!, longitude: rec.gpsLongitude! }}
-                            pinColor={pinColor}
-                            title={`${activity?.icon ?? ''} ${activity?.name ?? rec.activityId}`}
-                            description={`${rec.teamName ?? 'Team'} · ${formatDate(rec.completedAt ?? rec.startedAt)}`}
-                        />
-                    );
-                })}
+            <MapView
+                key={latest.id}
+                style={StyleSheet.absoluteFillObject}
+                provider={PROVIDER_DEFAULT}
+                initialRegion={region}
+            >
+                <Marker
+                    coordinate={{ latitude: latest.gpsLatitude!, longitude: latest.gpsLongitude! }}
+                    pinColor={pinColor}
+                    title={`${activity?.icon ?? ''} ${activity?.name ?? latest.activityId}`}
+                    description={`${latest.teamName ?? 'Team'} · ${formatDate(latest.completedAt ?? latest.startedAt)}`}
+                />
             </MapView>
 
             <View style={[styles.badge, { backgroundColor: colors.surface }]}>
                 <Ionicons name="location" size={IconSize.sm} color={colors.primary} />
                 <ThemedText variant="labelMedium">
-                    {records.length} tagged {records.length === 1 ? 'activity' : 'activities'}
+                    Latest: {activity?.name ?? latest.activityId}
                 </ThemedText>
             </View>
         </View>

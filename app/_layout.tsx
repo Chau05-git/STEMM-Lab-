@@ -56,6 +56,7 @@ function RootStack() {
                     options={{ presentation: 'fullScreenModal' }}
                 />
                 <Stack.Screen name="record/[id]" />
+                <Stack.Screen name="location" options={{ headerShown: true, title: 'Location' }} />
                 <Stack.Screen name="scan" options={{ headerShown: true, title: 'Scan record' }} />
             </Stack>
         </>

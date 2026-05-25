@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { Screen } from '@/components/Screen';
@@ -18,6 +18,7 @@ import { encodeAttempt } from '@/services/qr';
 
 export default function RecordDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
+    const router = useRouter();
     const { resolvedTheme } = useSettings();
     const colors = Colors[resolvedTheme];
 
@@ -99,12 +100,22 @@ export default function RecordDetailScreen() {
                         <ThemedText variant="labelLarge">{'★'.repeat(attempt.rating)}{'☆'.repeat(5 - attempt.rating)}</ThemedText>
                     </View>
                     {attempt.gpsLatitude != null ? (
-                        <View style={styles.dataRow}>
-                            <Ionicons name="location" size={IconSize.sm} color={colors.textTertiary} />
-                            <ThemedText variant="caption" color="textTertiary" style={styles.gps}>
-                                {attempt.gpsLatitude.toFixed(4)}, {attempt.gpsLongitude?.toFixed(4)}
+                        <Pressable
+                            style={styles.dataRow}
+                            onPress={() => router.push(
+                                `/location?lat=${attempt.gpsLatitude}&lon=${attempt.gpsLongitude}` +
+                                `&title=${encodeURIComponent(`${activity?.icon ?? ''} ${activity?.name ?? ''}`)}` +
+                                `&subtitle=${encodeURIComponent(attempt.teamName ?? 'Team')}` as Href,
+                            )}
+                            accessibilityRole="button"
+                            accessibilityLabel="View this record's location on the map"
+                        >
+                            <Ionicons name="location" size={IconSize.sm} color={colors.primary} />
+                            <ThemedText variant="caption" color="primary" style={styles.gps}>
+                                {attempt.gpsLatitude.toFixed(4)}, {attempt.gpsLongitude?.toFixed(4)} — view on map
                             </ThemedText>
-                        </View>
+                            <Ionicons name="chevron-forward" size={IconSize.sm} color={colors.textTertiary} />
+                        </Pressable>
                     ) : null}
                     {attempt.comment ? (
                         <ThemedText variant="bodySmall" color="textSecondary" style={styles.comment}>
