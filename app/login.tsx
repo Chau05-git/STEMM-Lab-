@@ -78,6 +78,18 @@ export default function LoginScreen() {
                         />
 
                         <Button label="Sign In" onPress={handleLogin} loading={loading} />
+
+                        <Pressable
+                            onPress={() => {
+                                setEmail('test@stemm-lab.edu');
+                                setPassword('test123');
+                            }}
+                            style={styles.demoButton}
+                        >
+                            <ThemedText variant="labelMedium" color="primary">
+                                Use Demo Account
+                            </ThemedText>
+                        </Pressable>
                     </View>
 
                     <View style={styles.footer}>
@@ -113,6 +125,7 @@ const styles = StyleSheet.create({
     title: { marginBottom: Spacing.xs },
     subtitle: { marginBottom: Spacing.xxl },
     form: { marginBottom: Spacing.lg },
+    demoButton: { marginTop: Spacing.md, alignItems: 'center' },
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
