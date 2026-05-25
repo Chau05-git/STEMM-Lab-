@@ -125,6 +125,7 @@ export interface DataTableRow {
 export interface ActivityAttempt {
     id: string;
     teamId: string;
+    teamName?: string;       // for display + QR sharing across devices
     activityId: string;
     iteration: number;
     sensorReadings: SensorReading[];

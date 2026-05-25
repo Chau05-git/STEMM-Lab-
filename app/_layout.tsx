@@ -44,6 +44,8 @@ function RootStack() {
                     name="activity/[id]/camera"
                     options={{ presentation: 'fullScreenModal' }}
                 />
+                <Stack.Screen name="record/[id]" />
+                <Stack.Screen name="scan" options={{ headerShown: true, title: 'Scan record' }} />
             </Stack>
         </>
     );

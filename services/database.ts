@@ -21,6 +21,7 @@ async function initSchema(db: SQLite.SQLiteDatabase): Promise<void> {
         CREATE TABLE IF NOT EXISTS attempts (
             id           TEXT PRIMARY KEY,
             team_id      TEXT NOT NULL,
+            team_name    TEXT,
             activity_id  TEXT NOT NULL,
             iteration    INTEGER NOT NULL DEFAULT 1,
             data_rows    TEXT NOT NULL DEFAULT '[]',
@@ -49,6 +50,13 @@ async function initSchema(db: SQLite.SQLiteDatabase): Promise<void> {
         CREATE INDEX IF NOT EXISTS idx_attempts_activity ON attempts(activity_id);
         CREATE INDEX IF NOT EXISTS idx_readings_attempt  ON readings(attempt_id);
     `);
+
+    // Migration for databases created before team_name existed.
+    try {
+        await db.execAsync('ALTER TABLE attempts ADD COLUMN team_name TEXT');
+    } catch {
+        // column already exists — ignore
+    }
 }
 
 // ─── Save ────────────────────────────────────────────────────────
@@ -58,11 +66,12 @@ export async function saveAttempt(attempt: ActivityAttempt): Promise<void> {
 
     await db.runAsync(
         `INSERT OR REPLACE INTO attempts
-         (id, team_id, activity_id, iteration, data_rows, video_uri,
+         (id, team_id, team_name, activity_id, iteration, data_rows, video_uri,
           rating, comment, gps_lat, gps_lon, started_at, completed_at, synced)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         attempt.id,
         attempt.teamId,
+        attempt.teamName ?? null,
         attempt.activityId,
         attempt.iteration,
         JSON.stringify(attempt.dataTableRows),
@@ -99,7 +108,7 @@ async function saveReading(reading: SensorReading, attemptId: string): Promise<v
 // ─── Read ────────────────────────────────────────────────────────
 
 interface AttemptRow {
-    id: string; team_id: string; activity_id: string; iteration: number;
+    id: string; team_id: string; team_name: string | null; activity_id: string; iteration: number;
     data_rows: string; video_uri: string | null; rating: number; comment: string;
     gps_lat: number | null; gps_lon: number | null;
     started_at: number; completed_at: number | null; synced: number;
@@ -109,6 +118,7 @@ function rowToAttempt(row: AttemptRow, readings: SensorReading[]): ActivityAttem
     return {
         id: row.id,
         teamId: row.team_id,
+        teamName: row.team_name ?? undefined,
         activityId: row.activity_id,
         iteration: row.iteration,
         dataTableRows: JSON.parse(row.data_rows),
@@ -140,6 +150,22 @@ export async function getAttemptsByTeam(teamId: string): Promise<ActivityAttempt
         teamId,
     );
     return Promise.all(rows.map(async (r) => rowToAttempt(r, await readingsFor(r.id))));
+}
+
+/** All attempts on this device (own + imported via QR), newest first. */
+export async function getAllAttempts(): Promise<ActivityAttempt[]> {
+    const db = await getDb();
+    const rows = await db.getAllAsync<AttemptRow>(
+        'SELECT * FROM attempts ORDER BY started_at DESC',
+    );
+    return Promise.all(rows.map(async (r) => rowToAttempt(r, await readingsFor(r.id))));
+}
+
+export async function getAttemptById(id: string): Promise<ActivityAttempt | null> {
+    const db = await getDb();
+    const row = await db.getFirstAsync<AttemptRow>('SELECT * FROM attempts WHERE id = ?', id);
+    if (!row) return null;
+    return rowToAttempt(row, await readingsFor(row.id));
 }
 
 export async function getAttemptCount(teamId: string, activityId: string): Promise<number> {

@@ -25,7 +25,7 @@ export default function ResultsScreen() {
     const router = useRouter();
     const { resolvedTheme } = useSettings();
     const { activeAttempt, finishAttempt, discardAttempt } = useActivity();
-    const { activityProgress, setActivityProgress } = useTeam();
+    const { team, activityProgress, setActivityProgress } = useTeam();
     const colors = Colors[resolvedTheme];
 
     const [rating, setRating] = useState(0);
@@ -102,6 +102,7 @@ export default function ResultsScreen() {
             const loc = await getCurrentLocation();
             const toSave: ActivityAttempt = {
                 ...finished,
+                teamName: team?.name,
                 rating,
                 comment,
                 gpsLatitude: loc?.latitude,

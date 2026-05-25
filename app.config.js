@@ -77,6 +77,12 @@ export default ({ config }) => ({
             'expo-sqlite',
             'expo-video',
             [
+                'expo-camera',
+                {
+                    cameraPermission: 'STEMM Lab uses the camera to scan record QR codes from other devices.',
+                },
+            ],
+            [
                 'expo-image-picker',
                 {
                     cameraPermission: 'STEMM Lab uses the camera to record your activity drops and experiments.',

@@ -52,9 +52,9 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="leaderboard"
                 options={{
-                    title: 'Ranks',
-                    headerTitle: 'Leaderboard',
-                    tabBarIcon: ({ size, color }) => <Ionicons name="trophy" size={size} color={color} />,
+                    title: 'Records',
+                    headerTitle: 'Challenge Records',
+                    tabBarIcon: ({ size, color }) => <Ionicons name="albums" size={size} color={color} />,
                 }}
             />
             <Tabs.Screen
