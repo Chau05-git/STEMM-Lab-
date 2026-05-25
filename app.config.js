@@ -113,5 +113,11 @@ export default ({ config }) => ({
         runtimeVersion: {
             policy: 'appVersion',
         },
+
+        // Over-the-air (OTA) updates — lets JS/TS changes be pushed with
+        // `eas update` without rebuilding the APK.
+        updates: {
+            url: 'https://u.expo.dev/1d94aa56-e77a-429c-b8ef-49d3916c58aa',
+        },
     },
 });
