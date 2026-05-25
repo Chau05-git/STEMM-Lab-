@@ -15,7 +15,7 @@ import type { ActivityAttempt } from '@/constants/types';
 import { useActivity } from '@/context/ActivityContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTeam } from '@/context/TeamContext';
-import { calculateEarthquake, calculateHandFan, calculateParachute, calculateSound, parachuteScore, HF_DELIM, type CalculationResult, type HandFanMaterial } from '@/services/calculations';
+import { activityScore, calculateEarthquake, calculateHandFan, calculateHumanPerformance, calculateParachute, calculateSound, HF_DELIM, type CalculationResult, type HandFanMaterial } from '@/services/calculations';
 import { saveAttempt } from '@/services/database';
 import { getCurrentLocation } from '@/services/location';
 import { getHearingRisk } from '@/services/sensors/audio';
@@ -25,7 +25,7 @@ export default function ResultsScreen() {
     const router = useRouter();
     const { resolvedTheme } = useSettings();
     const { activeAttempt, finishAttempt, discardAttempt } = useActivity();
-    const { setActivityProgress } = useTeam();
+    const { activityProgress, setActivityProgress } = useTeam();
     const colors = Colors[resolvedTheme];
 
     const [rating, setRating] = useState(0);
@@ -70,6 +70,12 @@ export default function ResultsScreen() {
             peakMm: r.value,
         }));
         results = calculateEarthquake(designs);
+    } else if (activity.id === 'human-performance' && activeAttempt) {
+        const attempts = activeAttempt.sensorReadings.map((r) => ({
+            label: r.label ?? 'Attempt',
+            smoothness: r.value,
+        }));
+        results = calculateHumanPerformance(attempts);
     }
 
     // For sound, classify the loudest (peak) reading into a hearing-risk band.
@@ -92,11 +98,20 @@ export default function ResultsScreen() {
             };
             await saveAttempt(toSave);
 
-            const score = activity.id === 'parachute-drop' ? parachuteScore(results) : 0;
+            // Headline score for this attempt, keeping the team's best so far.
+            const s = activityScore(activity.id, results);
+            const prevBest = activityProgress[activity.id]?.bestScore;
+            const best =
+                prevBest === undefined
+                    ? s.value
+                    : s.higherIsBetter
+                        ? Math.max(prevBest, s.value)
+                        : Math.min(prevBest, s.value);
+
             await setActivityProgress(activity.id, {
                 status: 'completed',
-                bestScore: score,
-                bestScoreUnit: 'safety',
+                bestScore: best,
+                bestScoreUnit: s.unit,
                 lastAttemptAt: Date.now(),
             });
         }

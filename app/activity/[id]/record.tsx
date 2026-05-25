@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Button } from '@/components/ui/Button';
 import { EarthquakeRecorder } from '@/components/sensors/EarthquakeRecorder';
 import { HandFanRecorder } from '@/components/sensors/HandFanRecorder';
+import { HumanPerformanceRecorder } from '@/components/sensors/HumanPerformanceRecorder';
 import { ParachuteRecorder } from '@/components/sensors/ParachuteRecorder';
 import { SoundRecorder } from '@/components/sensors/SoundRecorder';
 import { getActivityById } from '@/constants/activities';
@@ -60,6 +61,8 @@ export default function RecordScreen() {
                     <HandFanRecorder activity={activity} accent={accent} />
                 ) : activity.id === 'earthquake-structure' ? (
                     <EarthquakeRecorder activity={activity} accent={accent} />
+                ) : activity.id === 'human-performance' ? (
+                    <HumanPerformanceRecorder activity={activity} accent={accent} />
                 ) : (
                     /* Other activities get their recorders in later phases */
                     <View>

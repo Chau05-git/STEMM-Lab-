@@ -207,14 +207,9 @@ export interface EarthquakeDesign {
     peakMm: number; // peak vibration amplitude over the shake test (mm)
 }
 
-/** 0–100 stability score — less movement = more stable. */
-export function earthquakeStability(peakMm: number): number {
-    return Math.round(Math.max(0, Math.min(100, 100 - peakMm * 10)));
-}
-
 /**
- * One card per design (peak amplitude + stability score) plus a card naming
- * the most stable design — the one whose structure absorbed the most shaking.
+ * One card per design (peak movement) plus a card naming the most stable
+ * design — simply the one that vibrated the least during its test.
  */
 export function calculateEarthquake(designs: EarthquakeDesign[]): CalculationResult[] {
     if (designs.length === 0) return [];
@@ -222,18 +217,91 @@ export function calculateEarthquake(designs: EarthquakeDesign[]): CalculationRes
     const cards: CalculationResult[] = designs.map((d) => ({
         name: d.label,
         value: round(d.peakMm, 1),
-        unit: `mm · ${earthquakeStability(d.peakMm)}% stable`,
+        unit: 'mm movement',
         formula: 'peak = max(|vibration amplitude|) over the test',
         level: 'primary',
     }));
 
     const best = designs.reduce((a, b) => (b.peakMm < a.peakMm ? b : a));
     cards.push({
-        name: '🏆 Most stable design',
-        value: earthquakeStability(best.peakMm),
-        unit: `/100 — ${best.label}`,
-        formula: 'highest stability = lowest peak movement',
+        name: `🏆 Most stable: ${best.label}`,
+        value: round(best.peakMm, 1),
+        unit: 'mm movement',
+        formula: 'least vibration = most stable',
         level: 'primary',
     });
     return cards;
+}
+
+// ─── Activity 5: Human Performance Lab ──────────────────────────
+
+export interface MovementAttempt {
+    label: string;      // includes the attempt name + duration for display
+    smoothness: number; // 0–100, higher = smoother / better control
+}
+
+/**
+ * One card per movement attempt (smoothness score) plus a card naming the
+ * smoothest attempt — the one with the most controlled motion.
+ */
+export function calculateHumanPerformance(attempts: MovementAttempt[]): CalculationResult[] {
+    if (attempts.length === 0) return [];
+
+    const cards: CalculationResult[] = attempts.map((a) => ({
+        name: a.label,
+        value: a.smoothness,
+        unit: 'smoothness /100',
+        formula: 'smoothness = 100 − average movement jitter',
+        level: 'primary',
+    }));
+
+    const best = attempts.reduce((a, b) => (b.smoothness > a.smoothness ? b : a));
+    cards.push({
+        name: `🏆 Smoothest: ${best.label}`,
+        value: best.smoothness,
+        unit: 'smoothness /100',
+        formula: 'highest smoothness = best coordination',
+        level: 'primary',
+    });
+    return cards;
+}
+
+// ─── Leaderboard scoring ─────────────────────────────────────────
+
+export interface ActivityScore {
+    value: number;
+    unit: string;
+    /** true if a HIGHER value is better (affects "best" comparison + ranking). */
+    higherIsBetter: boolean;
+}
+
+/**
+ * Reduce an activity's full result set to a single headline score + unit for
+ * the leaderboard. Each activity measures something different, so each has its
+ * own metric and "better" direction.
+ */
+export function activityScore(activityId: string, results: CalculationResult[]): ActivityScore {
+    const find = (name: string) => results.find((r) => r.name === name)?.value ?? 0;
+
+    switch (activityId) {
+        case 'parachute-drop':
+            return { value: parachuteScore(results), unit: 'safety pts', higherIsBetter: true };
+        case 'sound-pollution':
+            return { value: find('Peak Sound Level'), unit: 'dB peak', higherIsBetter: false };
+        case 'hand-fan': {
+            const maxBend = results.length ? Math.max(...results.map((r) => r.value)) : 0;
+            return { value: maxBend, unit: '° max bend', higherIsBetter: true };
+        }
+        case 'earthquake-structure': {
+            // The most stable design's peak movement; less movement is better.
+            const winner = results.find((r) => r.name.startsWith('🏆'))?.value ?? 0;
+            return { value: winner, unit: 'mm (least)', higherIsBetter: false };
+        }
+        case 'human-performance': {
+            const best = results.find((r) => r.name.startsWith('🏆'))?.value ?? 0;
+            return { value: best, unit: 'smoothness', higherIsBetter: true };
+        }
+        default:
+            return { value: 0, unit: '', higherIsBetter: true };
+    }
 }

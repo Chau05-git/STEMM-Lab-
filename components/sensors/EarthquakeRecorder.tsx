@@ -9,7 +9,6 @@ import { BorderRadius, Colors, Spacing } from '@/constants/theme';
 import type { ActivityDefinition, SensorReading } from '@/constants/types';
 import { useActivity } from '@/context/ActivityContext';
 import { useSettings } from '@/context/SettingsContext';
-import { earthquakeStability } from '@/services/calculations';
 import { createAccelerometerService } from '@/services/sensors/accelerometer';
 
 interface Props {
@@ -136,21 +135,28 @@ export function EarthquakeRecorder({ activity, accent }: Props) {
                 <ThemedText variant="bodySmall" color="error" style={styles.error}>{error}</ThemedText>
             ) : null}
 
-            {/* Saved designs */}
+            {/* Saved designs — the one with the least movement is the most stable */}
             {saved.length > 0 ? (
                 <View style={[styles.savedCard, { backgroundColor: colors.surface }]}>
-                    {saved.map((r) => {
-                        const stab = earthquakeStability(r.value);
-                        return (
-                            <View key={r.id} style={styles.savedRow}>
-                                <ThemedText variant="bodyMedium" style={styles.savedLabel} numberOfLines={1}>
-                                    {r.label}
-                                </ThemedText>
-                                <ThemedText variant="labelMedium" color="textTertiary">{r.value} mm</ThemedText>
-                                <ThemedText variant="labelLarge" style={{ color: accent }}>{stab}%</ThemedText>
-                            </View>
-                        );
-                    })}
+                    {(() => {
+                        const minPeak = Math.min(...saved.map((r) => r.value));
+                        return saved.map((r) => {
+                            const isBest = r.value === minPeak;
+                            return (
+                                <View key={r.id} style={styles.savedRow}>
+                                    <ThemedText variant="bodyMedium" style={styles.savedLabel} numberOfLines={1}>
+                                        {isBest ? '🏆 ' : ''}{r.label}
+                                    </ThemedText>
+                                    <ThemedText
+                                        variant="labelLarge"
+                                        style={{ color: isBest ? accent : colors.textSecondary }}
+                                    >
+                                        {r.value} mm
+                                    </ThemedText>
+                                </View>
+                            );
+                        });
+                    })()}
                 </View>
             ) : null}
 
