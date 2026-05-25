@@ -43,9 +43,9 @@ export default function SignupScreen() {
         setLoading(true);
         try {
             await signUp(email, password);
-            router.replace('/register');
-        } catch {
-            setError('Could not create account. Please try again.');
+            router.replace('/');
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Could not create account. Please try again.');
         } finally {
             setLoading(false);
         }

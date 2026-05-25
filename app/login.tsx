@@ -34,9 +34,9 @@ export default function LoginScreen() {
         setLoading(true);
         try {
             await signIn(email, password);
-            router.replace('/register');
-        } catch {
-            setError('Could not sign in. Please try again.');
+            router.replace('/');
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Could not sign in. Please try again.');
         } finally {
             setLoading(false);
         }
