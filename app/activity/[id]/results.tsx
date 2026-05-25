@@ -15,7 +15,7 @@ import type { ActivityAttempt } from '@/constants/types';
 import { useActivity } from '@/context/ActivityContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTeam } from '@/context/TeamContext';
-import { activityScore, calculateEarthquake, calculateHandFan, calculateHumanPerformance, calculateParachute, calculateSound, HF_DELIM, type CalculationResult, type HandFanMaterial } from '@/services/calculations';
+import { activityScore, calculateBreathing, calculateEarthquake, calculateHandFan, calculateHumanPerformance, calculateParachute, calculateReaction, calculateSound, HF_DELIM, type CalculationResult, type HandFanMaterial } from '@/services/calculations';
 import { saveAttempt } from '@/services/database';
 import { getCurrentLocation } from '@/services/location';
 import { getHearingRisk } from '@/services/sensors/audio';
@@ -76,6 +76,17 @@ export default function ResultsScreen() {
             smoothness: r.value,
         }));
         results = calculateHumanPerformance(attempts);
+    } else if (activity.id === 'reaction-board' && activeAttempt) {
+        const times = activeAttempt.sensorReadings
+            .filter((r) => r.sensorType === 'touchscreen')
+            .map((r) => r.value);
+        results = calculateReaction(times);
+    } else if (activity.id === 'breathing-pace' && activeAttempt) {
+        const conditions = activeAttempt.sensorReadings.map((r) => ({
+            label: r.label ?? 'Reading',
+            bpm: r.value,
+        }));
+        results = calculateBreathing(conditions);
     }
 
     // For sound, classify the loudest (peak) reading into a hearing-risk band.

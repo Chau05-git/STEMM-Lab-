@@ -266,6 +266,74 @@ export function calculateHumanPerformance(attempts: MovementAttempt[]): Calculat
     return cards;
 }
 
+// ─── Activity 6: Reaction Board ──────────────────────────────────
+
+/** Average + best (fastest) reaction time from a list of round times (ms). */
+export function calculateReaction(timesMs: number[]): CalculationResult[] {
+    if (timesMs.length === 0) return [];
+    const avg = timesMs.reduce((s, t) => s + t, 0) / timesMs.length;
+    return [
+        {
+            name: 'Average Reaction',
+            value: round(avg, 0),
+            unit: 'ms',
+            formula: `avg = Σ times / n = total / ${timesMs.length}`,
+            level: 'primary',
+        },
+        {
+            name: '⚡ Best Reaction',
+            value: Math.min(...timesMs),
+            unit: 'ms',
+            formula: 'best = min(times)',
+            level: 'primary',
+        },
+    ];
+}
+
+/** Fun descriptor for a reaction time. */
+export function reactionRating(ms: number): string {
+    if (ms < 200) return 'Lightning reflexes! ⚡';
+    if (ms < 300) return 'Very fast 🚀';
+    if (ms < 400) return 'Good 👍';
+    if (ms < 550) return 'Average';
+    return 'Keep practising 💪';
+}
+
+// ─── Activity 7: Breathing Pace Trainer ─────────────────────────
+
+export interface BreathingCondition {
+    label: string; // e.g. "At rest", "After exercise"
+    bpm: number;   // breaths per minute
+}
+
+/**
+ * One card per breathing condition plus, when there are two or more, the
+ * change in rate from the first to the last condition.
+ */
+export function calculateBreathing(conditions: BreathingCondition[]): CalculationResult[] {
+    if (conditions.length === 0) return [];
+
+    const cards: CalculationResult[] = conditions.map((c) => ({
+        name: c.label,
+        value: round(c.bpm, 0),
+        unit: 'breaths/min',
+        formula: 'BPM = (chest peaks / time) × 60',
+        level: 'primary',
+    }));
+
+    if (conditions.length >= 2) {
+        const diff = conditions[conditions.length - 1].bpm - conditions[0].bpm;
+        cards.push({
+            name: `${diff >= 0 ? '📈' : '📉'} Change (first → last)`,
+            value: round(diff, 0),
+            unit: 'breaths/min',
+            formula: 'last − first condition',
+            level: 'primary',
+        });
+    }
+    return cards;
+}
+
 // ─── Leaderboard scoring ─────────────────────────────────────────
 
 export interface ActivityScore {
@@ -301,6 +369,13 @@ export function activityScore(activityId: string, results: CalculationResult[]):
             const best = results.find((r) => r.name.startsWith('🏆'))?.value ?? 0;
             return { value: best, unit: 'smoothness', higherIsBetter: true };
         }
+        case 'reaction-board': {
+            const best = results.find((r) => r.name.startsWith('⚡'))?.value ?? 0;
+            return { value: best, unit: 'ms (fastest)', higherIsBetter: false };
+        }
+        case 'breathing-pace':
+            // Resting rate (first condition); a calmer/lower rate scores better.
+            return { value: results[0]?.value ?? 0, unit: 'bpm rest', higherIsBetter: false };
         default:
             return { value: 0, unit: '', higherIsBetter: true };
     }
