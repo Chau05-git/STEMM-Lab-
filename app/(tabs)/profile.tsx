@@ -11,12 +11,14 @@ import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTeam } from '@/context/TeamContext';
+import { batteryColor, batteryIconName, useBattery } from '@/hooks/useBattery';
 
 export default function ProfileScreen() {
     const router = useRouter();
     const { resolvedTheme } = useSettings();
     const { team, activityProgress, clearTeam } = useTeam();
     const { signOut } = useAuth();
+    const battery = useBattery();
     const colors = Colors[resolvedTheme];
 
     const completedCount = ACTIVITIES.filter(
@@ -57,6 +59,22 @@ export default function ProfileScreen() {
             <View style={styles.statsRow}>
                 <StatBox label="Members" value={String(team?.members.length ?? 0)} colors={colors} />
                 <StatBox label="Completed" value={`${completedCount}/${ACTIVITIES.length}`} colors={colors} />
+            </View>
+
+            {/* Device battery */}
+            <View style={[styles.batteryRow, { backgroundColor: colors.surface }]}>
+                <Ionicons
+                    name={battery.isLoaded ? batteryIconName(battery.level, battery.isCharging) : 'battery-half'}
+                    size={IconSize.lg}
+                    color={batteryColor(battery.level)}
+                />
+                <ThemedText variant="bodyMedium" style={styles.batteryLabel}>
+                    Device battery
+                </ThemedText>
+                <ThemedText variant="labelLarge" style={{ color: batteryColor(battery.level) }}>
+                    {battery.level === null ? '—' : `${Math.round(battery.level * 100)}%`}
+                    {battery.isCharging ? ' ⚡' : ''}
+                </ThemedText>
             </View>
 
             {/* Members list */}
@@ -133,7 +151,16 @@ const styles = StyleSheet.create({
     },
     teamName: { marginBottom: Spacing.xxs },
     discriminator: { opacity: 0.85 },
-    statsRow: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.xl },
+    statsRow: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
+    batteryRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.md,
+        padding: Spacing.md,
+        borderRadius: BorderRadius.lg,
+        marginBottom: Spacing.xl,
+    },
+    batteryLabel: { flex: 1 },
     statBox: {
         flex: 1,
         borderRadius: BorderRadius.lg,

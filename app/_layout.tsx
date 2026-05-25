@@ -1,15 +1,26 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 
 import { Colors } from '@/constants/theme';
 import { AuthProvider } from '@/context/AuthContext';
 import { ActivityProvider } from '@/context/ActivityContext';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { TeamProvider } from '@/context/TeamContext';
+import { registerBackgroundSync, syncPendingAttempts } from '@/services/backgroundTask';
+import { registerForNotifications } from '@/services/notifications';
 
 function RootStack() {
     const { resolvedTheme } = useSettings();
     const colors = Colors[resolvedTheme];
+
+    useEffect(() => {
+        // One-time setup: notifications, background sync task, and an
+        // immediate push of anything saved while offline.
+        registerForNotifications().catch(console.warn);
+        registerBackgroundSync().catch(console.warn);
+        syncPendingAttempts().catch(console.warn);
+    }, []);
 
     return (
         <>

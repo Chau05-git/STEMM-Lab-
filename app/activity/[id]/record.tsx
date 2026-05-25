@@ -19,6 +19,8 @@ import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
 import { useActivity } from '@/context/ActivityContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTeam } from '@/context/TeamContext';
+import { useBattery } from '@/hooks/useBattery';
+import { notifyLowBattery } from '@/services/notifications';
 
 const SENSOR_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
     camera: 'videocam',
@@ -35,6 +37,7 @@ export default function RecordScreen() {
     const { resolvedTheme } = useSettings();
     const { team } = useTeam();
     const { activeAttempt, startAttempt } = useActivity();
+    const battery = useBattery();
     const colors = Colors[resolvedTheme];
 
     const activity = getActivityById(id);
@@ -45,6 +48,13 @@ export default function RecordScreen() {
             startAttempt(activity.id, team.id);
         }
     }, [activity, team, activeAttempt, startAttempt]);
+
+    // Warn once if the battery is low before a sensor-heavy recording.
+    useEffect(() => {
+        if (battery.isLoaded && battery.level !== null && battery.level < 0.2 && !battery.isCharging) {
+            void notifyLowBattery(battery.level);
+        }
+    }, [battery.isLoaded, battery.level, battery.isCharging]);
 
     if (!activity) return null;
 

@@ -17,9 +17,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTeam } from '@/context/TeamContext';
 import { activityScore, calculateBreathing, calculateEarthquake, calculateHandFan, calculateHumanPerformance, calculateParachute, calculateReaction, calculateSound, HF_DELIM, type CalculationResult, type HandFanMaterial } from '@/services/calculations';
-import { saveAttempt } from '@/services/database';
+import { markSynced, saveAttempt } from '@/services/database';
 import { saveAttemptCloud } from '@/services/firestore';
 import { getCurrentLocation } from '@/services/location';
+import { notifyActivityComplete } from '@/services/notifications';
 import { getHearingRisk } from '@/services/sensors/audio';
 
 export default function ResultsScreen() {
@@ -112,7 +113,12 @@ export default function ResultsScreen() {
                 gpsLongitude: loc?.longitude,
             };
             await saveAttempt(toSave);
-            if (user) await saveAttemptCloud(user.uid, toSave); // sync to this account's cloud
+            if (user) {
+                // Sync to this account's cloud; mark synced so the background
+                // task doesn't re-push it. If offline, it stays pending.
+                const ok = await saveAttemptCloud(user.uid, toSave);
+                if (ok) await markSynced(toSave.id);
+            }
 
             // Headline score for this attempt, keeping the team's best so far.
             const s = activityScore(activity.id, results);
@@ -130,6 +136,8 @@ export default function ResultsScreen() {
                 bestScoreUnit: s.unit,
                 lastAttemptAt: Date.now(),
             });
+
+            void notifyActivityComplete(activity.name);
         }
         discardAttempt();
         setSaving(false);

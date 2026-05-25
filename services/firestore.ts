@@ -70,12 +70,14 @@ export async function getProgressCloud(uid: string): Promise<ActivityProgressMap
 
 // ─── Attempts ────────────────────────────────────────────────────
 
-export async function saveAttemptCloud(uid: string, attempt: ActivityAttempt): Promise<void> {
-    if (!isFirebaseConfigured || !db) return;
+export async function saveAttemptCloud(uid: string, attempt: ActivityAttempt): Promise<boolean> {
+    if (!isFirebaseConfigured || !db) return false;
     try {
         await setDoc(doc(db, 'users', uid, 'attempts', attempt.id), clean(attempt));
+        return true;
     } catch (e) {
         console.warn('saveAttemptCloud failed:', e);
+        return false;
     }
 }
 
