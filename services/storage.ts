@@ -2,11 +2,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AppSettings, ActivityProgress, Team } from '@/constants/types';
 
 // ─── Keys ────────────────────────────────────────────────────────
+// Team & progress are scoped per account (uid) so two accounts on the same
+// device never see each other's data. Settings stay global to the device.
 const KEYS = {
-    TEAM:     '@stemmlab/team',
     SETTINGS: '@stemmlab/settings',
-    PROGRESS: '@stemmlab/progress',
 } as const;
+
+const teamKey = (uid?: string) => (uid ? `@stemmlab/team/${uid}` : '@stemmlab/team');
+const progressKey = (uid?: string) => (uid ? `@stemmlab/progress/${uid}` : '@stemmlab/progress');
 
 // Map of activityId → progress
 export type ActivityProgressMap = Record<string, ActivityProgress>;
@@ -20,18 +23,18 @@ export const DEFAULT_SETTINGS: AppSettings = {
     gradeFilter: '',
 };
 
-// ─── Team profile ────────────────────────────────────────────────
-export async function saveTeam(team: Team): Promise<void> {
-    await AsyncStorage.setItem(KEYS.TEAM, JSON.stringify(team));
+// ─── Team profile (per account) ──────────────────────────────────
+export async function saveTeam(team: Team, uid?: string): Promise<void> {
+    await AsyncStorage.setItem(teamKey(uid), JSON.stringify(team));
 }
 
-export async function getTeam(): Promise<Team | null> {
-    const json = await AsyncStorage.getItem(KEYS.TEAM);
+export async function getTeam(uid?: string): Promise<Team | null> {
+    const json = await AsyncStorage.getItem(teamKey(uid));
     return json ? (JSON.parse(json) as Team) : null;
 }
 
-export async function clearTeam(): Promise<void> {
-    await AsyncStorage.removeItem(KEYS.TEAM);
+export async function clearTeam(uid?: string): Promise<void> {
+    await AsyncStorage.removeItem(teamKey(uid));
 }
 
 // ─── Settings ────────────────────────────────────────────────────
@@ -46,17 +49,17 @@ export async function getSettings(): Promise<AppSettings> {
         : DEFAULT_SETTINGS;
 }
 
-// ─── Activity progress ───────────────────────────────────────────
-export async function saveProgress(progress: ActivityProgressMap): Promise<void> {
-    await AsyncStorage.setItem(KEYS.PROGRESS, JSON.stringify(progress));
+// ─── Activity progress (per account) ─────────────────────────────
+export async function saveProgress(progress: ActivityProgressMap, uid?: string): Promise<void> {
+    await AsyncStorage.setItem(progressKey(uid), JSON.stringify(progress));
 }
 
-export async function getProgress(): Promise<ActivityProgressMap> {
-    const json = await AsyncStorage.getItem(KEYS.PROGRESS);
+export async function getProgress(uid?: string): Promise<ActivityProgressMap> {
+    const json = await AsyncStorage.getItem(progressKey(uid));
     return json ? (JSON.parse(json) as ActivityProgressMap) : {};
 }
 
-// ─── Reset everything ────────────────────────────────────────────
+// ─── Reset everything (this device) ──────────────────────────────
 export async function clearAll(): Promise<void> {
-    await AsyncStorage.multiRemove([KEYS.TEAM, KEYS.SETTINGS, KEYS.PROGRESS]);
+    await AsyncStorage.clear();
 }

@@ -7,6 +7,7 @@ import {
 } from 'firebase/firestore';
 
 import type { ActivityAttempt, Team } from '@/constants/types';
+import type { ActivityProgressMap } from './storage';
 import { db, isFirebaseConfigured } from './firebase';
 
 /**
@@ -40,6 +41,29 @@ export async function getTeamCloud(uid: string): Promise<Team | null> {
         return (data?.team as Team) ?? null;
     } catch (e) {
         console.warn('getTeamCloud failed:', e);
+        return null;
+    }
+}
+
+// ─── Activity progress (status / best score per activity) ────────
+
+export async function saveProgressCloud(uid: string, progress: ActivityProgressMap): Promise<void> {
+    if (!isFirebaseConfigured || !db) return;
+    try {
+        await setDoc(doc(db, 'users', uid), { progress: clean(progress) }, { merge: true });
+    } catch (e) {
+        console.warn('saveProgressCloud failed:', e);
+    }
+}
+
+export async function getProgressCloud(uid: string): Promise<ActivityProgressMap | null> {
+    if (!isFirebaseConfigured || !db) return null;
+    try {
+        const snap = await getDoc(doc(db, 'users', uid));
+        const data = snap.exists() ? snap.data() : null;
+        return (data?.progress as ActivityProgressMap) ?? null;
+    } catch (e) {
+        console.warn('getProgressCloud failed:', e);
         return null;
     }
 }

@@ -2,7 +2,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import type { ActivityProgress, Team } from '@/constants/types';
 import { useAuth } from '@/context/AuthContext';
-import { getTeamCloud, saveTeamCloud } from '@/services/firestore';
+import {
+    getProgressCloud,
+    getTeamCloud,
+    saveProgressCloud,
+    saveTeamCloud,
+} from '@/services/firestore';
 import {
     clearTeam as clearTeamStorage,
     getProgress,
@@ -36,61 +41,71 @@ const TeamContext = createContext<TeamContextValue>({
 
 export function TeamProvider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
+    const uid = user?.uid;
     const [team, setTeam] = useState<Team | null>(null);
     const [activityProgress, setProgress] = useState<ActivityProgressMap>({});
     const [isLoading, setIsLoading] = useState(true);
 
-    // Load team for the current account. When signed in, the cloud copy
-    // (users/{uid}.team) is the source of truth so each account only ever
-    // sees its own team — falling back to the local cache when offline.
+    // Load this account's team + progress. Everything is scoped per account
+    // (cloud users/{uid} first, then a uid-keyed local cache) so two accounts
+    // on the same device never see each other's data.
     useEffect(() => {
         let active = true;
         (async () => {
             setIsLoading(true);
-            const progress = await getProgress();
-            if (active) setProgress(progress);
 
-            if (user) {
-                const cloud = await getTeamCloud(user.uid);
+            if (uid) {
+                const [cloudTeam, cloudProg] = await Promise.all([
+                    getTeamCloud(uid),
+                    getProgressCloud(uid),
+                ]);
                 if (!active) return;
-                if (cloud) {
-                    setTeam(cloud);
-                    await saveTeam(cloud); // cache locally for offline
-                } else {
-                    setTeam(await getTeam()); // not-yet-synced / offline cache
-                }
+
+                const nextTeam = cloudTeam ?? (await getTeam(uid));
+                const nextProg = cloudProg ?? (await getProgress(uid));
+                if (!active) return;
+
+                setTeam(nextTeam);
+                setProgress(nextProg);
+
+                // Cache cloud copies locally for offline use.
+                if (cloudTeam) await saveTeam(cloudTeam, uid);
+                if (cloudProg) await saveProgress(cloudProg, uid);
             } else {
+                // Local-only mode (no Firebase / not signed in).
                 setTeam(await getTeam());
+                setProgress(await getProgress());
             }
             if (active) setIsLoading(false);
         })();
         return () => { active = false; };
-    }, [user]);
+    }, [uid]);
 
     const registerTeam = async (t: Team) => {
         setTeam(t);
-        await saveTeam(t);
-        if (user) await saveTeamCloud(user.uid, t);
+        await saveTeam(t, uid);
+        if (uid) await saveTeamCloud(uid, t);
     };
 
     const updateTeam = async (updates: Partial<Team>) => {
         if (!team) return;
         const next = { ...team, ...updates };
         setTeam(next);
-        await saveTeam(next);
-        if (user) await saveTeamCloud(user.uid, next);
+        await saveTeam(next, uid);
+        if (uid) await saveTeamCloud(uid, next);
     };
 
     const setActivityProgress = async (activityId: string, progress: ActivityProgress) => {
         const next = { ...activityProgress, [activityId]: progress };
         setProgress(next);
-        await saveProgress(next);
+        await saveProgress(next, uid);
+        if (uid) await saveProgressCloud(uid, next);
     };
 
     const clearTeam = async () => {
         setTeam(null);
         setProgress({});
-        await clearTeamStorage();
+        await clearTeamStorage(uid);
     };
 
     return (
