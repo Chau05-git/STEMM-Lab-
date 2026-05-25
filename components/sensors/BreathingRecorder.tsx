@@ -63,8 +63,9 @@ export function BreathingRecorder({ activity, accent }: Props) {
         tickRef.current = setInterval(() => {
             const secs = (Date.now() - startRef.current) / 1000;
             setElapsed(secs);
-            if (secs > 3) setLiveBpm(accel.getBreathsPerMinute(secs));
-        }, 500);
+            // Slow breathing needs ~8s of data before a period can be found.
+            if (secs > 8) setLiveBpm(accel.getBreathsPerMinute(secs));
+        }, 700);
         setIsActive(true);
     };
 
@@ -108,9 +109,11 @@ export function BreathingRecorder({ activity, accent }: Props) {
                     {isActive ? `RECORDING… ${elapsed.toFixed(0)}s` : 'BREATHS / MIN'}
                 </ThemedText>
                 <ThemedText variant="displayMedium" style={[styles.value, { color: isActive ? colors.info : accent }]}>
-                    {liveBpm}
+                    {isActive && liveBpm === 0 ? '…' : liveBpm}
                 </ThemedText>
-                <ThemedText variant="bodySmall" color="textTertiary">breaths per minute</ThemedText>
+                <ThemedText variant="bodySmall" color="textTertiary">
+                    {isActive && liveBpm === 0 ? 'measuring…' : 'breaths per minute'}
+                </ThemedText>
             </View>
 
             <ThemedText variant="bodySmall" color="textTertiary" style={styles.hint}>
