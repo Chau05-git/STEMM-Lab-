@@ -17,6 +17,15 @@
       "channel": "preview",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyD5onwTElbCoDRh4kbnJl9x0GIXRXm4G_Y",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "stemm-lab-backend.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "stemm-lab-backend",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "stemm-lab-backend.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "373105521348",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:373105521348:web:14a4fdb525d2d7eda34f91",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-8RSHRK5L4H"
       }
     },
     "production": {

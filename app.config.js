@@ -5,6 +5,7 @@ export default ({ config }) => ({
     expo: {
         name: 'STEMM Lab',
         slug: 'stemm-lab',
+        owner: 'minchau_dev',
         version: '1.0.0',
         orientation: 'portrait',
         icon: './assets/images/icon.png',
@@ -105,7 +106,7 @@ export default ({ config }) => ({
         extra: {
             router: {},
             eas: {
-                projectId: '',
+                projectId: '1d94aa56-e77a-429c-b8ef-49d3916c58aa',
             },
         },
 

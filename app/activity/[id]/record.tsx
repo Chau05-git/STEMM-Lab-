@@ -42,9 +42,13 @@ export default function RecordScreen() {
 
     const activity = getActivityById(id);
 
-    // Begin a fresh attempt when this screen opens (if none in progress).
+    // Begin a fresh attempt when this screen opens. Also restart if a leftover
+    // attempt from a DIFFERENT activity is still active (e.g. the previous one
+    // was opened but never saved) — otherwise this activity's data would be
+    // stored under the wrong activityId and the record would show the wrong
+    // challenge.
     useEffect(() => {
-        if (activity && team && !activeAttempt) {
+        if (activity && team && (!activeAttempt || activeAttempt.activityId !== activity.id)) {
             startAttempt(activity.id, team.id);
         }
     }, [activity, team, activeAttempt, startAttempt]);
