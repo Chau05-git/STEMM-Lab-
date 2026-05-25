@@ -13,10 +13,12 @@ import { activityHeaderOptions } from '@/constants/screenOptions';
 import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
 import type { ActivityAttempt } from '@/constants/types';
 import { useActivity } from '@/context/ActivityContext';
+import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTeam } from '@/context/TeamContext';
 import { activityScore, calculateBreathing, calculateEarthquake, calculateHandFan, calculateHumanPerformance, calculateParachute, calculateReaction, calculateSound, HF_DELIM, type CalculationResult, type HandFanMaterial } from '@/services/calculations';
 import { saveAttempt } from '@/services/database';
+import { saveAttemptCloud } from '@/services/firestore';
 import { getCurrentLocation } from '@/services/location';
 import { getHearingRisk } from '@/services/sensors/audio';
 
@@ -25,6 +27,7 @@ export default function ResultsScreen() {
     const router = useRouter();
     const { resolvedTheme } = useSettings();
     const { activeAttempt, finishAttempt, discardAttempt } = useActivity();
+    const { user } = useAuth();
     const { team, activityProgress, setActivityProgress } = useTeam();
     const colors = Colors[resolvedTheme];
 
@@ -109,6 +112,7 @@ export default function ResultsScreen() {
                 gpsLongitude: loc?.longitude,
             };
             await saveAttempt(toSave);
+            if (user) await saveAttemptCloud(user.uid, toSave); // sync to this account's cloud
 
             // Headline score for this attempt, keeping the team's best so far.
             const s = activityScore(activity.id, results);

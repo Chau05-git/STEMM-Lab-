@@ -43,7 +43,8 @@ export default function SignupScreen() {
         setLoading(true);
         try {
             await signUp(email, password);
-            router.replace('/');
+            // Brand-new account → always set up the team profile first.
+            router.replace('/register');
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Could not create account. Please try again.');
         } finally {

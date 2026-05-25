@@ -9,13 +9,16 @@ import { Button } from '@/components/ui/Button';
 import { activityHeaderOptions } from '@/constants/screenOptions';
 import { getActivityById } from '@/constants/activities';
 import { Colors, IconSize, Spacing } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { saveAttempt } from '@/services/database';
+import { saveAttemptCloud } from '@/services/firestore';
 import { decodeAttempt } from '@/services/qr';
 
 export default function ScanScreen() {
     const router = useRouter();
     const { resolvedTheme } = useSettings();
+    const { user } = useAuth();
     const colors = Colors[resolvedTheme];
 
     const [permission, requestPermission] = useCameraPermissions();
@@ -35,6 +38,7 @@ export default function ScanScreen() {
 
         try {
             await saveAttempt(attempt);
+            if (user) await saveAttemptCloud(user.uid, attempt); // add to your account's cloud
             const activity = getActivityById(attempt.activityId);
             Alert.alert(
                 'Record imported',

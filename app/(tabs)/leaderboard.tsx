@@ -9,8 +9,10 @@ import { Button } from '@/components/ui/Button';
 import { getActivityById } from '@/constants/activities';
 import { BorderRadius, Colors, IconSize, Spacing } from '@/constants/theme';
 import type { ActivityAttempt } from '@/constants/types';
+import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
-import { getAllAttempts } from '@/services/database';
+import { getAllAttempts, saveAttempt } from '@/services/database';
+import { getAttemptsCloud } from '@/services/firestore';
 
 function formatDate(ts: number): string {
     const d = new Date(ts);
@@ -21,16 +23,31 @@ function formatDate(ts: number): string {
 export default function RecordsScreen() {
     const router = useRouter();
     const { resolvedTheme } = useSettings();
+    const { user, isCloud } = useAuth();
     const colors = Colors[resolvedTheme];
     const [records, setRecords] = useState<ActivityAttempt[]>([]);
 
     // Reload whenever the tab regains focus (after saving / importing).
+    // When signed in, the account's own cloud records are the source of truth
+    // (kept isolated per account); they're cached locally for detail/QR.
     useFocusEffect(
         useCallback(() => {
             let active = true;
-            getAllAttempts().then((r) => { if (active) setRecords(r); });
+            (async () => {
+                if (isCloud && user) {
+                    const cloud = await getAttemptsCloud(user.uid);
+                    await Promise.all(cloud.map((a) => saveAttempt(a)));
+                    const sorted = cloud.sort(
+                        (a, b) => (b.completedAt ?? b.startedAt) - (a.completedAt ?? a.startedAt),
+                    );
+                    if (active) setRecords(sorted);
+                } else {
+                    const local = await getAllAttempts();
+                    if (active) setRecords(local);
+                }
+            })();
             return () => { active = false; };
-        }, []),
+        }, [isCloud, user]),
     );
 
     return (
